@@ -1,6 +1,7 @@
 
 /rsrc.aps
 *.suo
+*.sdf
 *.ncb
 *.user
 Debug
