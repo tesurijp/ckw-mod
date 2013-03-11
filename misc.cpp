@@ -41,18 +41,8 @@ static void __write_console_input(LPCWSTR str, DWORD length)
 		p->Event.KeyEvent.wRepeatCount = 1;
 		p->Event.KeyEvent.wVirtualKeyCode = 0;
 		p->Event.KeyEvent.wVirtualScanCode = 0;
-		p->Event.KeyEvent.uChar.UnicodeChar = 0;
+		p->Event.KeyEvent.uChar.UnicodeChar = *str++;
 		p->Event.KeyEvent.dwControlKeyState = 0;
-		if(*str == '\r') {
-			str++;
-			length--;
-		}
-		if(*str == '\n') {
-			p->Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
-			str++;
-		} else {
-			p->Event.KeyEvent.uChar.UnicodeChar = *str++;
-		}
 	}
 
 	WriteConsoleInput(gStdIn, buf, length, &length);
