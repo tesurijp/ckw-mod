@@ -154,7 +154,7 @@ wchar_t * getAllString()
 	for( int y=0 ; y<gCSI->dwSize.Y ; ++y )
 	{
 		sr.Top = sr.Bottom = y;
-		ReadConsoleOutput_Unicode(gStdOut, work, size, pos, &sr);
+		ReadConsoleOutput(gStdOut, work, size, pos, &sr);
 		copyChar( wp, work, 0, gCSI->dwSize.X-1 );
 	}
 

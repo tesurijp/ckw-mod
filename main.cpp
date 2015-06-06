@@ -20,6 +20,7 @@
  *---------------------------------------------------------------------------*/
 #include "ckw.h"
 #include "rsrc.h"
+#include "encoding.h"
 #include <imm.h>
 
 /*****************************************************************************/
@@ -110,45 +111,6 @@ void trace(const char *msg)
 
 /*****************************************************************************/
 
-BOOL WINAPI ReadConsoleOutput_Unicode(HANDLE con, CHAR_INFO* buffer,
-				      COORD size, COORD pos, SMALL_RECT *sr)
-{
-	if(!ReadConsoleOutputA(con, buffer, size, pos, sr))
-		return(FALSE);
-
-	CHAR_INFO* s = buffer;
-	CHAR_INFO* e = buffer + (size.X * size.Y);
-	DWORD	codepage = GetConsoleOutputCP();
-	BYTE	ch[2];
-	WCHAR	wch;
-
-	while(s < e) {
-		ch[0] = s->Char.AsciiChar;
-
-		if(s->Attributes & COMMON_LVB_LEADING_BYTE) {
-			if((s+1) < e && ((s+1)->Attributes & COMMON_LVB_TRAILING_BYTE)) {
-				ch[1] = (s+1)->Char.AsciiChar;
-				if(MultiByteToWideChar(codepage, 0, (LPCSTR)ch, 2, &wch, 1)) {
-					s->Char.UnicodeChar = wch;
-					s++;
-					s->Char.UnicodeChar = wch;
-					s++;
-					continue;
-				}
-			}
-		}
-
-		if(MultiByteToWideChar(codepage, 0, (LPCSTR)ch, 1, &wch, 1)) {
-			s->Char.UnicodeChar = wch;
-		}
-		s->Attributes &= ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
-		s++;
-	}
-	return(TRUE);
-}
-
-/*****************************************************************************/
-
 /*----------*/
 inline void __draw_invert_char_rect(HDC hDC, RECT& rc)
 {
@@ -224,7 +186,26 @@ static void __draw_selection(HDC hDC)
 	}
 }
 
+static UINT get_ucs(CHAR_INFO *ptr)
+{
+	UINT ucs;
+	if(IS_HIGH_SURROGATE(ptr->Char.UnicodeChar) == true) {
+		if(ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+			ucs = surrogate_to_ucs(ptr->Char.UnicodeChar, (ptr+2)->Char.UnicodeChar);
+		} else {
+			ucs = surrogate_to_ucs(ptr->Char.UnicodeChar, (ptr+1)->Char.UnicodeChar);
+		}
+	} else {
+		ucs = static_cast<UINT>(ptr->Char.UnicodeChar);
+	}
+	return ucs;
+}
+
 /*----------*/
+/*
+ CP932(TTF)   : 全角文字は2回出現。AttributesにCOMMON_LVB_*が立つ
+ CP65001      : 全角文字は1回のみ。CSIの座標とCHAR_INFOの座標は一致しない
+ */
 static void __draw_screen(HDC hDC)
 {
 	int	pntX, pntY;
@@ -234,9 +215,9 @@ static void __draw_screen(HDC hDC)
 	CHAR_INFO* ptr = gScreen;
 	int	 work_color_fg = -1;
 	int	 work_color_bg = -1;
-	wchar_t* work_text = new wchar_t[ CSI_WndCols(gCSI) ];
+	wchar_t* work_text = new wchar_t[ CSI_WndCols(gCSI) * 2 ];
 	wchar_t* work_text_ptr;
-	INT*	 work_width = new INT[ CSI_WndCols(gCSI) ];
+	INT*	 work_width = new INT[ CSI_WndCols(gCSI) * 2 ];
 	INT*	 work_width_ptr;
 	int	 work_pntX;
 
@@ -249,7 +230,12 @@ static void __draw_screen(HDC hDC)
 		for(x = gCSI->srWindow.Left ; x <= gCSI->srWindow.Right ; x++) {
 
 			if(ptr->Attributes & COMMON_LVB_TRAILING_BYTE) {
-				pntX += gFontW;
+				ptr++;
+				continue;
+			}
+			if(IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
+				*work_text_ptr++ = ptr->Char.UnicodeChar;
+				*work_width_ptr++ = 0;
 				ptr++;
 				continue;
 			}
@@ -275,9 +261,11 @@ static void __draw_screen(HDC hDC)
 				SetBkMode(hDC, (work_color_bg) ? OPAQUE : TRANSPARENT);
 			}
 
-			if(ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+			if (is_dblchar_cjk(get_ucs(ptr)) == true) {
+				// Double width
 				*work_text_ptr++ = ptr->Char.UnicodeChar;
 				*work_width_ptr++ = gFontW * 2;
+				pntX += gFontW;
 			}
 			else {
 				*work_text_ptr++ = ptr->Char.UnicodeChar;
@@ -309,10 +297,36 @@ static void __draw_screen(HDC hDC)
 		color_bg = (gImeOn) ? kColorCursorImeBg : kColorCursorBg;
 		pntX = gCSI->dwCursorPosition.X - gCSI->srWindow.Left;
 		pntY = gCSI->dwCursorPosition.Y - gCSI->srWindow.Top;
-		ptr = gScreen + CSI_WndCols(gCSI) * pntY + pntX;
+
+		ptr = gScreen + CSI_WndCols(gCSI) * pntY;
+		work_pntX = 0;
+		int surrogate = 0;
+		for (int i=0; i<pntX; i++) {
+			if((ptr->Attributes & COMMON_LVB_TRAILING_BYTE)) {
+				ptr++;
+				continue;
+			}
+			if(IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
+				surrogate++;
+				ptr++;
+				continue;
+			}
+			if (is_dblchar_cjk(get_ucs(ptr)) == true) {
+				work_pntX += gFontW * 2;
+			} else {
+				work_pntX += gFontW;
+			}
+			ptr++;
+		}	
+
+		ptr = gScreen + CSI_WndCols(gCSI) * pntY + pntX + surrogate;	// カーソル座標->文字座標の変換が必要(pntx)
 		pntX *= gFontW;
 		pntY *= gFontH;
-		*work_width = (ptr->Attributes & COMMON_LVB_LEADING_BYTE) ? gFontW*2 : gFontW;
+		if (is_dblchar_cjk(get_ucs(ptr)) == true) {
+			*work_width = gFontW*2;
+		} else {
+			*work_width = gFontW;
+		}
 		if(!gFocus){
 			HPEN hPen = CreatePen(PS_SOLID, 1, gColorTable[ color_bg ]);
 			HPEN hOldPen = (HPEN)SelectObject(hDC, hPen);
@@ -324,8 +338,21 @@ static void __draw_screen(HDC hDC)
 			SetTextColor(hDC, gColorTable[ color_fg ]);
 			SetBkColor(  hDC, gColorTable[ color_bg ]);
 			SetBkMode(hDC, OPAQUE);
-			ExtTextOut(hDC, pntX, pntY, 0, NULL,
-					&ptr->Char.UnicodeChar, 1, work_width);
+			if (IS_HIGH_SURROGATE(ptr->Char.UnicodeChar)) {
+				wchar_t src[2];
+				src[0] = ptr->Char.UnicodeChar;
+				if (ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+					src[1] = (ptr+2)->Char.UnicodeChar;
+				} else {
+					src[1] = (ptr+1)->Char.UnicodeChar;
+				}
+				*work_width = *work_width/2;		// 苦肉の策
+				ExtTextOut(hDC, work_pntX, pntY, ETO_CLIPPED, NULL,
+						src, 2, work_width);
+			} else {
+				ExtTextOut(hDC, work_pntX, pntY, 0, NULL,
+						&ptr->Char.UnicodeChar, 1, work_width);
+			}
 		}
 	}
 
@@ -470,6 +497,25 @@ static void __set_ime_position(HWND hWnd)
 	HIMC imc = ImmGetContext(hWnd);
 	LONG px = gCSI->dwCursorPosition.X - gCSI->srWindow.Left;
 	LONG py = gCSI->dwCursorPosition.Y - gCSI->srWindow.Top;
+
+	CHAR_INFO *ptr = gScreen + CSI_WndCols(gCSI) * py;
+	LONG work_px = 0;
+	for (int i=0; i<px; i++) {
+		if (is_dblchar_cjk(get_ucs(ptr)) == true) {
+			if((ptr->Attributes & COMMON_LVB_TRAILING_BYTE)) {
+				// do nothing
+			} else if(IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
+				// do nothing
+			} else {
+				work_px += 2;
+			}
+		} else {
+			work_px += 1;
+		}
+		ptr++;
+	}
+	px = work_px;
+
 	COMPOSITIONFORM cf;
 	cf.dwStyle = CFS_POINT;
 	cf.ptCurrentPos.x = px * gFontW + gBorderSize;
@@ -533,7 +579,7 @@ void	onTimer(HWND hWnd)
 			sr.Bottom = csi->srWindow.Bottom;
 			size.Y = sr.Bottom - sr.Top +1;
 		}
-		ReadConsoleOutput_Unicode(gStdOut, ptr, size, pos, &sr);
+		ReadConsoleOutput(gStdOut, ptr, size, pos, &sr);
 		ptr += size.X * size.Y;
 		sr.Top = sr.Bottom +1;
 	} while(sr.Top <= csi->srWindow.Bottom);
@@ -1065,7 +1111,6 @@ static void __hide_alloc_console()
 	while((gConWnd = GetConsoleWindow()) == NULL) {
 		Sleep(10);
 	}
-
 	if (!bResult){
 		while (!IsWindowVisible(gConWnd)) {
 			Sleep(10);
@@ -1121,42 +1166,18 @@ static BOOL create_console(ckOpt& opt)
 
 	if(!gConWnd || !gStdIn || !gStdOut || !gStdErr)
 		return(FALSE);
-
-	HINSTANCE hLib;
-	hLib = LoadLibraryW( L"KERNEL32.DLL" );
-	if (hLib == NULL)
-		goto done;
-
-	#define GetProc( proc ) \
-	do { \
-		proc = (proc##T)GetProcAddress( hLib, #proc ); \
-		if (proc == NULL) \
-			goto freelib; \
-	} while (0)
-	GetProc( GetConsoleFontInfo );
-	GetProc( GetNumberOfConsoleFonts );
-	GetProc( SetConsoleFont );
-	#undef GetProc
-
 	{
-		CONSOLE_FONT font[MAX_FONTS];
-		DWORD fonts;
-		fonts = GetNumberOfConsoleFonts();
-		if (fonts > MAX_FONTS)
-			fonts = MAX_FONTS;
-	
-		GetConsoleFontInfo(gStdOut, 0, fonts, font);
-		CONSOLE_FONT minimalFont = { 0, {0, 0}};
-		for(DWORD i=0;i<fonts;i++){
-			if(minimalFont.dim.X < font[i].dim.X && minimalFont.dim.Y < font[i].dim.Y)
-				minimalFont = font[i];
+		CONSOLE_FONT_INFOEX info = {0};
+		info.cbSize       = sizeof(info);
+		info.dwFontSize.Y = opt.getFontSize();
+		info.FontWeight   = FW_NORMAL;
+		MultiByteToWideChar(CP_ACP,0, opt.getFont(), -1, info.FaceName, LF_FACESIZE);
+		if (wcslen(info.FaceName) != 0) {
+			if (SetCurrentConsoleFontEx(gStdOut, FALSE, &info) == FALSE) {
+				return(FALSE);
+			}
 		}
-		SetConsoleFont(gStdOut, minimalFont.index);
 	}
-	freelib:
-		FreeLibrary( hLib );
-	done:
-
 	/* set buffer & window size */
 	COORD size;
 	SMALL_RECT sr = {0,0,0,0};
