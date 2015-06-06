@@ -1,5 +1,5 @@
 TARGET = ckw.exe
-OBJ = main.obj selection.obj misc.obj option.obj rsrc.res
+OBJ = main.obj selection.obj misc.obj option.obj encoding.obj rsrc.res
 
 #CFLAGS = -nologo -MLd -Od -W3 -GX -D_DEBUG
 CFLAGS = -nologo -MT -O2 -W3 -EHsc -DNDEBUG

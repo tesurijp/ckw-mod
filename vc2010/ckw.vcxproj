@@ -189,6 +189,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\encoding.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\misc.cpp" />
     <ClCompile Include="..\option.cpp" />
@@ -196,6 +197,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ckw.h" />
+    <ClInclude Include="..\encoding.h" />
     <ClInclude Include="..\option.h" />
     <ClInclude Include="..\rsrc.h" />
     <ClInclude Include="..\version.h" />

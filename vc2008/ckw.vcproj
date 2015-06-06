@@ -314,7 +314,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\ime_wrap.cpp"
+				RelativePath="..\encoding.cpp"
 				>
 			</File>
 			<File
@@ -344,7 +344,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\ime_wrap.h"
+				RelativePath="..\encoding.h"
 				>
 			</File>
 			<File
