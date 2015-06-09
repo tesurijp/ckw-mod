@@ -300,14 +300,18 @@ static void __draw_screen(HDC hDC)
 
 		ptr = gScreen + CSI_WndCols(gCSI) * pntY;
 		work_pntX = 0;
-		int surrogate = 0;
 		for (int i=0; i<pntX; i++) {
 			if((ptr->Attributes & COMMON_LVB_TRAILING_BYTE)) {
 				ptr++;
 				continue;
 			}
 			if(IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
-				surrogate++;
+				work_pntX += gFontW;
+				ptr++;
+				continue;
+			}
+			if(IS_HIGH_SURROGATE(ptr->Char.UnicodeChar) == true) {
+				work_pntX += gFontW;
 				ptr++;
 				continue;
 			}
@@ -319,7 +323,7 @@ static void __draw_screen(HDC hDC)
 			ptr++;
 		}	
 
-		ptr = gScreen + CSI_WndCols(gCSI) * pntY + pntX + surrogate;	// カーソル座標->文字座標の変換が必要(pntx)
+		ptr = gScreen + CSI_WndCols(gCSI) * pntY + pntX;
 		pntX *= gFontW;
 		pntY *= gFontH;
 		if (is_dblchar_cjk(get_ucs(ptr)) == true) {
