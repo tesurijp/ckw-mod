@@ -63,22 +63,6 @@ CONSOLE_SCREEN_BUFFER_INFO* gCSI = NULL;
 CHAR_INFO*	gScreen = NULL;
 wchar_t*	gTitle = NULL;
 
-/* setConsoleFont */
-#define MAX_FONTS 128
-
-typedef struct _CONSOLE_FONT {
-  DWORD index;
-  COORD dim;
-} CONSOLE_FONT, *PCONSOLE_FONT;
-
-typedef BOOL  (WINAPI *GetConsoleFontInfoT)( HANDLE,BOOL,DWORD,PCONSOLE_FONT );
-typedef DWORD (WINAPI *GetNumberOfConsoleFontsT)( VOID );
-typedef BOOL  (WINAPI *SetConsoleFontT)( HANDLE, DWORD );
-
-GetConsoleFontInfoT		GetConsoleFontInfo;
-GetNumberOfConsoleFontsT	GetNumberOfConsoleFonts;
-SetConsoleFontT			SetConsoleFont;
-
 /* index color */
 enum {
 	kColor0 = 0,
@@ -1096,8 +1080,8 @@ static void __hide_alloc_console()
 
 	/* check */
 	if(si.dwFlags == backup_flags && si.wShowWindow == backup_show) {
-		// 詳細は不明だがSTARTF_TITLEISLINKNAMEが立っていると、
-		// Console窓隠しに失敗するので除去(Win7-64bit)
+		// ショートカットからの起動する(STARTF_TITLEISLINKNAMEが立つ)と、
+		// Console窓を隠すのに失敗するので除去
 		if (*pflags & STARTF_TITLEISLINKNAME) {
 			*pflags &= ~STARTF_TITLEISLINKNAME;
 		}
@@ -1170,18 +1154,18 @@ static BOOL create_console(ckOpt& opt)
 
 	if(!gConWnd || !gStdIn || !gStdOut || !gStdErr)
 		return(FALSE);
-	{
-		CONSOLE_FONT_INFOEX info = {0};
-		info.cbSize       = sizeof(info);
-		info.dwFontSize.Y = opt.getFontSize();
-		info.FontWeight   = FW_NORMAL;
-		MultiByteToWideChar(CP_ACP,0, opt.getFont(), -1, info.FaceName, LF_FACESIZE);
-		if (wcslen(info.FaceName) != 0) {
-			if (SetCurrentConsoleFontEx(gStdOut, FALSE, &info) == FALSE) {
-				return(FALSE);
-			}
-		}
+
+	// 最大化不具合の解消の為フォントを最小化
+	// レイアウト崩れ/CP65001での日本語出力対策でMS GOTHICを指定
+	CONSOLE_FONT_INFOEX info = {0};
+	info.cbSize       = sizeof(info);
+	info.FontWeight   = FW_NORMAL;
+	info.dwFontSize.Y = 6;
+	lstrcpyn(info.FaceName, L"MS GOTHIC", LF_FACESIZE);
+	if (SetCurrentConsoleFontEx(gStdOut, FALSE, &info) == FALSE) {
+		return(FALSE);
 	}
+
 	/* set buffer & window size */
 	COORD size;
 	SMALL_RECT sr = {0,0,0,0};
