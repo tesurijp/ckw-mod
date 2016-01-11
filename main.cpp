@@ -489,10 +489,12 @@ static void __set_ime_position(HWND hWnd)
 	CHAR_INFO *ptr = gScreen + CSI_WndCols(gCSI) * py;
 	LONG work_px = 0;
 	for (int i=0; i<px; i++) {
+		if (IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
+			ptr++;
+			continue;
+		}
 		if (is_dblchar_cjk(get_ucs(ptr)) == true) {
 			if((ptr->Attributes & COMMON_LVB_TRAILING_BYTE)) {
-				// do nothing
-			} else if(IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
 				// do nothing
 			} else {
 				work_px += 2;
