@@ -11,5 +11,5 @@ echo #define VERSION_BUGFIX %VERSION_BGFIX%
 echo #define VERSION_STRING "%VERSION_MAJOR%.%VERSION_MINOR%.%VERSION_BGFIX%"
 echo #define VERSION_NUMSTRING "%VERSION_NUM%"
 echo #define BUILDDATE_STRING "%DATE%"
-echo #define COPYRIGHT_STRING "Copyright (C) 2005-2010  Kazuo Ishii and ckw-mod creators and more..."
-echo #define ABOUT_DLG_STRING "ckw-mod version %VERSION_MAJOR%.%VERSION_MINOR%.%VERSION_BGFIX% , build %DATE%\r\nCopyright (C) 2005-2010  Kazuo Ishii and ckw-moders"
+echo #define COPYRIGHT_STRING "Copyright (C) 2005-2016  Kazuo Ishii and ckw-mod creators and more..."
+echo #define ABOUT_DLG_STRING "ckw-mod version %VERSION_MAJOR%.%VERSION_MINOR%.%VERSION_BGFIX% , build %DATE%\r\nCopyright (C) 2005-2016  Kazuo Ishii and ckw-moders"
