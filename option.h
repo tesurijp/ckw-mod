@@ -10,9 +10,9 @@ public:
 	ckOpt();
 	~ckOpt();
 
-	void		setFile(const char *path=NULL);
+	void		setFile(const wchar_t *path=NULL);
 	void		loadXdefaults();
-	bool		set(int argc, char *argv[]);
+	bool		set(int argc, wchar_t *argv[]);
 
 	bool		isWinPos()		{ return(m_isWinPos); }
 	int		getWinPosX()		{ return(m_winPosX); }
@@ -43,38 +43,38 @@ public:
 	int		getBgBmpPos()		{ return(m_bgBmpPos); }
 	bool		isCurBlink()		{ return(m_isCurBlink); }
 
-	const char*	getCmd()
+	const wchar_t*	getCmd()
 	{
 		return((m_cmd.size()) ? m_cmd.c_str() : NULL);
 	}
 	int		getFontSize()		{ return(m_fontSize); }
-	const char*	getFont()
+	const wchar_t*	getFont()
 	{
 		return((m_font.size()) ? m_font.c_str() : NULL);
 	}
-	const char*	getBgBmp()
+	const wchar_t*	getBgBmp()
 	{
 		return((m_bgBmp.size()) ? m_bgBmp.c_str() : NULL);
 	}
-	const char*	getCurDir()
+	const wchar_t*	getCurDir()
 	{
 		return((m_curDir.size()) ? m_curDir.c_str() : NULL);
 	}
-	const char*	getTitle()
+	const wchar_t*	getTitle()
 	{
 		return((m_title.size()) ? m_title.c_str() : NULL);
 	}
-	const char*	getIcon()
+	const wchar_t*	getIcon()
 	{
 		return((m_icon.size()) ? m_icon.c_str() : NULL);
 	}
 
 
 protected:
-	void	cmdsMake(int argc, char *argv[]);
-	void	geometry(const char *str);
-	int	setOption(const char *name, const char *value, bool rsrc);
-	void	_loadXdefaults(const char *path);
+	void	cmdsMake(int argc, wchar_t *argv[]);
+	void	geometry(const wchar_t *str);
+	int	setOption(const wchar_t *name, const wchar_t *value, bool rsrc);
+	void	_loadXdefaults(const wchar_t *path);
 
 private:
 	bool		m_isWinPos;
@@ -83,16 +83,16 @@ private:
 	int		m_winCharW;
 	int		m_winCharH;
 	bool		m_isIconic;
-	std::string	m_cmd;
-	std::string	m_font;
+	std::wstring	m_cmd;
+	std::wstring	m_font;
 	int		m_fontSize;
 	COLORREF	m_colorFg;
 	COLORREF	m_colorBg;
 	COLORREF	m_colorCursor;
 	COLORREF	m_colorCursorIme;
 	COLORREF	m_colors[16];
-	std::string	m_bgBmp;
-	std::string	m_icon;
+	std::wstring	m_bgBmp;
+	std::wstring	m_icon;
 	bool		m_alwaysTray;
 	bool		m_minimizeToTray;
 	bool		m_scrollHide;
@@ -104,9 +104,9 @@ private:
 	bool		m_isTranspColor;
 	COLORREF	m_transpColor;
 	bool		m_isTopMost;
-	std::string	m_curDir;
-	std::string	m_title;
-	char	m_config_file[MAX_PATH+1];
+	std::wstring	m_curDir;
+	std::wstring	m_title;
+	wchar_t	m_config_file[MAX_PATH+1];
 	int		m_bgBmpPos;
 	bool		m_isCurBlink;
 };

@@ -804,7 +804,7 @@ static BOOL create_window(ckOpt& opt)
 
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	LPCWSTR	className = L"CkwWindowClass";
-	const char*	conf_icon;
+	const wchar_t*	conf_icon;
 	WNDCLASSEX wc;
 	DWORD	style = WS_OVERLAPPEDWINDOW;
 	DWORD	exstyle = WS_EX_ACCEPTFILES;
@@ -835,12 +835,8 @@ static BOOL create_window(ckOpt& opt)
 		icon   = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICON), IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_DEFAULTCOLOR);
 		iconsm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICON), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	}else{
-		LPWSTR icon_path = new wchar_t[ strlen(conf_icon)+1 ];
-		ZeroMemory(icon_path, sizeof(wchar_t) * (strlen(conf_icon)+1));
-		MultiByteToWideChar(CP_ACP, 0, conf_icon, (int)strlen(conf_icon), icon_path, (int)(sizeof(wchar_t) * (strlen(conf_icon)+1)) );
-		icon   = (HICON)LoadImage(NULL, icon_path, IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_LOADFROMFILE);
-		iconsm = (HICON)LoadImage(NULL, icon_path, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
-		delete [] icon_path;
+		icon   = (HICON)LoadImage(NULL, conf_icon, IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_LOADFROMFILE);
+		iconsm = (HICON)LoadImage(NULL, conf_icon, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
 	}
 
 	/* calc window size */
@@ -921,42 +917,42 @@ static BOOL create_window(ckOpt& opt)
 	return(TRUE);
 }
 
-static BOOL set_current_directory(const char *dir)
+static BOOL set_current_directory(const wchar_t *dir)
 {
 	trace(L"set_current_directory\n");
 	if (!dir) return(TRUE);
 
-	std::string cwd = dir;
-	size_t index = cwd.find("\"");
-	if (index != std::string::npos) {
+	std::wstring cwd = dir;
+	size_t index = cwd.find(L"\"");
+	if (index != std::wstring::npos) {
 		cwd.resize(index+1);
-		cwd[index] = '\\';
+		cwd[index] = L'\\';
 	}
-	BOOL b = SetCurrentDirectoryA(cwd.c_str());
+	BOOL b = SetCurrentDirectory(cwd.c_str());
 
 	return b;
 }
 
 /*----------*/
-static BOOL create_child_process(const char* cmd)
+static BOOL create_child_process(const wchar_t* cmd)
 {
-	trace("create_child_process\n");
+	trace(L"create_child_process\n");
 
-	char* buf = NULL;
+	wchar_t* buf = NULL;
 
 	if(!cmd || !cmd[0]) {
-		buf = new char[32768];
+		buf = new wchar_t[32768];
 		buf[0] = 0;
-		if(!GetEnvironmentVariableA("COMSPEC", buf, 32768))
-			strcpy(buf, "cmd.exe");
+		if(!GetEnvironmentVariable(L"COMSPEC", buf, 32768))
+			lstrcpy(buf, L"cmd.exe");
 	}
 	else {
-		buf = new char[ strlen(cmd)+1 ];
-		strcpy(buf, cmd);
+		buf = new wchar_t[ lstrlen(cmd)+1 ];
+		lstrcpy(buf, cmd);
 	}
 
 	PROCESS_INFORMATION pi;
-	STARTUPINFOA si;
+	STARTUPINFO si;
 	memset(&si, 0, sizeof(si));
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESTDHANDLES;
@@ -964,7 +960,7 @@ static BOOL create_child_process(const char* cmd)
 	si.hStdOutput = gStdOut;
 	si.hStdError  = gStdErr;
 
-	if(! CreateProcessA(NULL, buf, NULL, NULL, TRUE,
+	if(! CreateProcess(NULL, buf, NULL, NULL, TRUE,
 			    0, NULL, NULL, &si, &pi)) {
 		delete [] buf;
 		return(FALSE);
@@ -976,7 +972,7 @@ static BOOL create_child_process(const char* cmd)
 }
 
 /*----------*/
-static BOOL create_font(const char* name, int height)
+static BOOL create_font(const wchar_t* name, int height)
 {
 	trace(L"create_font\n");
 
@@ -994,9 +990,8 @@ static BOOL create_font(const char* name, int height)
 	gFontLog.lfClipPrecision = CLIP_DEFAULT_PRECIS;
 	gFontLog.lfQuality = DEFAULT_QUALITY;
 	gFontLog.lfPitchAndFamily = FIXED_PITCH | FF_DONTCARE;
-	if(name) {
-		MultiByteToWideChar(CP_ACP,0, name, -1, gFontLog.lfFaceName, LF_FACESIZE);
-	}
+
+	lstrcpy(gFontLog.lfFaceName, name);
 
 	gFont = CreateFontIndirect(&gFontLog);
 
@@ -1189,23 +1184,10 @@ BOOL init_options(ckOpt& opt)
 {
 	/* create argv */
 	int	i, argc;
-	LPWSTR*	wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	char**	argv = new char*[argc+1];
-	argv[argc] = 0;
-	for(i = 0 ; i < argc ; i++) {
-		DWORD wlen = (DWORD) wcslen(wargv[i]);
-		DWORD alen = wlen * 2 + 16;
-		argv[i] = new char[alen];
-		alen = WideCharToMultiByte(CP_ACP, 0, wargv[i],wlen, argv[i],alen,NULL,NULL);
-		argv[i][alen] = 0;
-	}
+	LPWSTR*	argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
 	opt.loadXdefaults();
 	bool result = opt.set(argc, argv);
-
-	for(i = 0 ; i < argc ; i++)
-		delete [] argv[i];
-	delete [] argv;
 
 	if(!result) return(FALSE);
 
@@ -1224,7 +1206,7 @@ BOOL init_options(ckOpt& opt)
 	gLineSpace = opt.getLineSpace();
 
 	if(opt.getBgBmp()) {
-		gBgBmp = (HBITMAP)LoadImageA(NULL, opt.getBgBmp(),
+		gBgBmp = (HBITMAP)LoadImage(NULL, opt.getBgBmp(),
 				IMAGE_BITMAP, 0,0, LR_LOADFROMFILE);
 	}
 	if(gBgBmp) {
@@ -1243,14 +1225,13 @@ BOOL init_options(ckOpt& opt)
 	gCurBlink = opt.isCurBlink();
 
 	if(gTitle) delete [] gTitle;
-	const char *conf_title = opt.getTitle();
+	const wchar_t *conf_title = opt.getTitle();
 	if(!conf_title || !conf_title[0]){
-		gTitle = new wchar_t[ wcslen(L"ckw")+1 ];
-		wcscpy(gTitle, L"ckw");
+		gTitle = new wchar_t[ lstrlen(L"ckw")+1 ];
+		wcscpy_s(gTitle, lstrlen(L"ckw")+1, L"ckw");
 	}else{
-		gTitle = new wchar_t[ strlen(conf_title)+1 ];
-		ZeroMemory(gTitle, sizeof(wchar_t) * (strlen(conf_title)+1));
-		MultiByteToWideChar(CP_ACP, 0, conf_title, (int)strlen(conf_title), gTitle, (int)(sizeof(wchar_t) * (strlen(conf_title)+1)) );
+		gTitle = new wchar_t[ lstrlen(conf_title)+1 ];
+		wcscpy_s(gTitle, lstrlen(conf_title)+1, conf_title);
 	}
 
 	return(TRUE);
