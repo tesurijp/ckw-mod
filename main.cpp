@@ -83,11 +83,9 @@ COLORREF gColorTable[ kColorMax ];
 /*****************************************************************************/
 
 #if 0
-#include <stdio.h>
-void trace(const char *msg)
+void trace(const wchar_t *msg)
 {
-	fputs(msg, stdout);
-	fflush(stdout);
+	OutputDebugString(msg);
 }
 #else
 #define trace(msg)
@@ -435,7 +433,7 @@ static void __set_console_window_size(LONG cols, LONG rows)
 /*----------*/
 void	onSizing(HWND hWnd, DWORD side, LPRECT rc)
 {
-	trace("onSizing\n");
+	trace(L"onSizing\n");
 	LONG fw = (gFrame.right - gFrame.left) + (gBorderSize * 2);
 	LONG fh = (gFrame.bottom - gFrame.top) + (gBorderSize * 2);
 	LONG width  = rc->right - rc->left;
@@ -463,7 +461,7 @@ void	onSizing(HWND hWnd, DWORD side, LPRECT rc)
 /*----------*/
 void	onWindowPosChange(HWND hWnd, WINDOWPOS* wndpos)
 {
-	trace("onWindowPosChange\n");
+	trace(L"onWindowPosChange\n");
 	if(!(wndpos->flags & SWP_NOSIZE) && !IsIconic(hWnd)) {
 		LONG fw = (gFrame.right - gFrame.left) + (gBorderSize * 2);
 		LONG fh = (gFrame.bottom - gFrame.top) + (gBorderSize * 2);
@@ -802,7 +800,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 /*----------*/
 static BOOL create_window(ckOpt& opt)
 {
-	trace("create_window\n");
+	trace(L"create_window\n");
 
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	LPCWSTR	className = L"CkwWindowClass";
@@ -925,7 +923,7 @@ static BOOL create_window(ckOpt& opt)
 
 static BOOL set_current_directory(const char *dir)
 {
-	trace("set_current_directory\n");
+	trace(L"set_current_directory\n");
 	if (!dir) return(TRUE);
 
 	std::string cwd = dir;
@@ -980,7 +978,7 @@ static BOOL create_child_process(const char* cmd)
 /*----------*/
 static BOOL create_font(const char* name, int height)
 {
-	trace("create_font\n");
+	trace(L"create_font\n");
 
 	memset(&gFontLog, 0, sizeof(gFontLog));
 	gFontLog.lfHeight = -height;
@@ -1267,22 +1265,22 @@ static BOOL initialize()
 		return(FALSE);
 	}
 	if(! create_console(opt)) {
-		trace("create_console failed\n");
+		trace(L"create_console failed\n");
 		return(FALSE);
 	}
 	if(! create_font(opt.getFont(), opt.getFontSize())) {
-		trace("create_font failed\n");
+		trace(L"create_font failed\n");
 		return(FALSE);
 	}
 	if (! set_current_directory(opt.getCurDir())) {
-		trace("set_current_directory failed\n");
+		trace(L"set_current_directory failed\n");
 	}
 	if(! create_child_process(opt.getCmd())) {
-		trace("create_child_process failed\n");
+		trace(L"create_child_process failed\n");
 		return(FALSE);
 	}
 	if(! create_window(opt)) {
-		trace("create_window failed\n");
+		trace(L"create_window failed\n");
 		return(FALSE);
 	}
 
