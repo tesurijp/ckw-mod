@@ -1129,7 +1129,7 @@ void	ckOpt::_loadXdefaults(const wchar_t *path)
 	FILE	*fp;
 	std::wstring app, name, value;
 
-	_wfopen_s(&fp, path, L"r");
+	_wfopen_s(&fp, path, L"r,ccs=UTF-8");
 	if(!fp) return;
 
 	do {
