@@ -22,7 +22,8 @@ endif
 SRCS = main.cpp \
        misc.cpp \
        option.cpp \
-       selection.cpp
+       selection.cpp \
+       encoding.cpp
 OBJS = $(SRCS:.cpp=.o) rsrc.res
 
 .SUFFIXES:

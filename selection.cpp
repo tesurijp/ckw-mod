@@ -192,20 +192,20 @@ wchar_t * selectionGetString()
 
 	if(gSelectRect.Top == gSelectRect.Bottom) {
 		sr.Top = sr.Bottom = gSelectRect.Top;
-		ReadConsoleOutput_Unicode(gStdOut, work, size, pos, &sr);
+		ReadConsoleOutput(gStdOut, work, size, pos, &sr);
 		copyChar(wp, work, gSelectRect.Left, gSelectRect.Right-1, false);
 	}
 	else {
 		sr.Top = sr.Bottom = gSelectRect.Top;
-		ReadConsoleOutput_Unicode(gStdOut, work, size, pos, &sr);
+		ReadConsoleOutput(gStdOut, work, size, pos, &sr);
 		copyChar(wp, work, gSelectRect.Left, gCSI->srWindow.Right);
 		for(y = gSelectRect.Top+1 ; y <= gSelectRect.Bottom-1 ; y++) {
 			sr.Top = sr.Bottom = y;
-			ReadConsoleOutput_Unicode(gStdOut, work, size, pos, &sr);
+			ReadConsoleOutput(gStdOut, work, size, pos, &sr);
 			copyChar(wp, work, gCSI->srWindow.Left, gCSI->srWindow.Right);
 		}
 		sr.Top = sr.Bottom = gSelectRect.Bottom;
-		ReadConsoleOutput_Unicode(gStdOut, work, size, pos, &sr);
+		ReadConsoleOutput(gStdOut, work, size, pos, &sr);
 		copyChar(wp, work, gCSI->srWindow.Left, gSelectRect.Right-1, false);
 	}
 

@@ -1,8 +1,8 @@
 #ifndef __CKW_H__
 #define __CKW_H__ 1
 
-#define _WIN32_WINNT 0x0500
-#define _WIN32_IE 0x0500
+#define _WIN32_WINNT _WIN32_WINNT_WINXP
+#define _WIN32_IE 0x0600
 #define _UNICODE 1
 #define  UNICODE 1
 #include <windows.h>
@@ -33,7 +33,6 @@ extern DWORD	gFontH;
 extern DWORD	gBorderSize;
 extern CONSOLE_SCREEN_BUFFER_INFO* gCSI;
 extern CHAR_INFO*	gScreen;
-BOOL WINAPI ReadConsoleOutput_Unicode(HANDLE,CHAR_INFO*,COORD,COORD,SMALL_RECT*);
 void	makeNewWindow();
 
 /* selection.cpp */

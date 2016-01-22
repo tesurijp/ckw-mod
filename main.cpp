@@ -20,6 +20,7 @@
  *---------------------------------------------------------------------------*/
 #include "ckw.h"
 #include "rsrc.h"
+#include "encoding.h"
 #include <imm.h>
 
 /*****************************************************************************/
@@ -62,22 +63,6 @@ CONSOLE_SCREEN_BUFFER_INFO* gCSI = NULL;
 CHAR_INFO*	gScreen = NULL;
 wchar_t*	gTitle = NULL;
 
-/* setConsoleFont */
-#define MAX_FONTS 128
-
-typedef struct _CONSOLE_FONT {
-  DWORD index;
-  COORD dim;
-} CONSOLE_FONT, *PCONSOLE_FONT;
-
-typedef BOOL  (WINAPI *GetConsoleFontInfoT)( HANDLE,BOOL,DWORD,PCONSOLE_FONT );
-typedef DWORD (WINAPI *GetNumberOfConsoleFontsT)( VOID );
-typedef BOOL  (WINAPI *SetConsoleFontT)( HANDLE, DWORD );
-
-GetConsoleFontInfoT		GetConsoleFontInfo;
-GetNumberOfConsoleFontsT	GetNumberOfConsoleFonts;
-SetConsoleFontT			SetConsoleFont;
-
 /* index color */
 enum {
 	kColor0 = 0,
@@ -98,54 +83,13 @@ COLORREF gColorTable[ kColorMax ];
 /*****************************************************************************/
 
 #if 0
-#include <stdio.h>
-void trace(const char *msg)
+void trace(const wchar_t *msg)
 {
-	fputs(msg, stdout);
-	fflush(stdout);
+	OutputDebugString(msg);
 }
 #else
 #define trace(msg)
 #endif
-
-/*****************************************************************************/
-
-BOOL WINAPI ReadConsoleOutput_Unicode(HANDLE con, CHAR_INFO* buffer,
-				      COORD size, COORD pos, SMALL_RECT *sr)
-{
-	if(!ReadConsoleOutputA(con, buffer, size, pos, sr))
-		return(FALSE);
-
-	CHAR_INFO* s = buffer;
-	CHAR_INFO* e = buffer + (size.X * size.Y);
-	DWORD	codepage = GetConsoleOutputCP();
-	BYTE	ch[2];
-	WCHAR	wch;
-
-	while(s < e) {
-		ch[0] = s->Char.AsciiChar;
-
-		if(s->Attributes & COMMON_LVB_LEADING_BYTE) {
-			if((s+1) < e && ((s+1)->Attributes & COMMON_LVB_TRAILING_BYTE)) {
-				ch[1] = (s+1)->Char.AsciiChar;
-				if(MultiByteToWideChar(codepage, 0, (LPCSTR)ch, 2, &wch, 1)) {
-					s->Char.UnicodeChar = wch;
-					s++;
-					s->Char.UnicodeChar = wch;
-					s++;
-					continue;
-				}
-			}
-		}
-
-		if(MultiByteToWideChar(codepage, 0, (LPCSTR)ch, 1, &wch, 1)) {
-			s->Char.UnicodeChar = wch;
-		}
-		s->Attributes &= ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
-		s++;
-	}
-	return(TRUE);
-}
 
 /*****************************************************************************/
 
@@ -224,7 +168,26 @@ static void __draw_selection(HDC hDC)
 	}
 }
 
+static UINT get_ucs(CHAR_INFO *ptr)
+{
+	UINT ucs;
+	if(IS_HIGH_SURROGATE(ptr->Char.UnicodeChar) == true) {
+		if(ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+			ucs = surrogate_to_ucs(ptr->Char.UnicodeChar, (ptr+2)->Char.UnicodeChar);
+		} else {
+			ucs = surrogate_to_ucs(ptr->Char.UnicodeChar, (ptr+1)->Char.UnicodeChar);
+		}
+	} else {
+		ucs = static_cast<UINT>(ptr->Char.UnicodeChar);
+	}
+	return ucs;
+}
+
 /*----------*/
+/*
+ CP932(TTF)   : 全角文字は2回出現。AttributesにCOMMON_LVB_*が立つ
+ CP65001      : 全角文字は1回のみ。CSIの座標とCHAR_INFOの座標は一致しない
+ */
 static void __draw_screen(HDC hDC)
 {
 	int	pntX, pntY;
@@ -234,9 +197,9 @@ static void __draw_screen(HDC hDC)
 	CHAR_INFO* ptr = gScreen;
 	int	 work_color_fg = -1;
 	int	 work_color_bg = -1;
-	wchar_t* work_text = new wchar_t[ CSI_WndCols(gCSI) ];
+	wchar_t* work_text = new wchar_t[ CSI_WndCols(gCSI) * 2 ];
 	wchar_t* work_text_ptr;
-	INT*	 work_width = new INT[ CSI_WndCols(gCSI) ];
+	INT*	 work_width = new INT[ CSI_WndCols(gCSI) * 2 ];
 	INT*	 work_width_ptr;
 	int	 work_pntX;
 
@@ -249,7 +212,12 @@ static void __draw_screen(HDC hDC)
 		for(x = gCSI->srWindow.Left ; x <= gCSI->srWindow.Right ; x++) {
 
 			if(ptr->Attributes & COMMON_LVB_TRAILING_BYTE) {
-				pntX += gFontW;
+				ptr++;
+				continue;
+			}
+			if(IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
+				*work_text_ptr++ = ptr->Char.UnicodeChar;
+				*work_width_ptr++ = 0;
 				ptr++;
 				continue;
 			}
@@ -275,9 +243,11 @@ static void __draw_screen(HDC hDC)
 				SetBkMode(hDC, (work_color_bg) ? OPAQUE : TRANSPARENT);
 			}
 
-			if(ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+			if (is_dblchar_cjk(get_ucs(ptr)) == true) {
+				// Double width
 				*work_text_ptr++ = ptr->Char.UnicodeChar;
 				*work_width_ptr++ = gFontW * 2;
+				pntX += gFontW;
 			}
 			else {
 				*work_text_ptr++ = ptr->Char.UnicodeChar;
@@ -309,10 +279,40 @@ static void __draw_screen(HDC hDC)
 		color_bg = (gImeOn) ? kColorCursorImeBg : kColorCursorBg;
 		pntX = gCSI->dwCursorPosition.X - gCSI->srWindow.Left;
 		pntY = gCSI->dwCursorPosition.Y - gCSI->srWindow.Top;
+
+		ptr = gScreen + CSI_WndCols(gCSI) * pntY;
+		work_pntX = 0;
+		for (int i=0; i<pntX; i++) {
+			if((ptr->Attributes & COMMON_LVB_TRAILING_BYTE)) {
+				ptr++;
+				continue;
+			}
+			if(IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
+				work_pntX += gFontW;
+				ptr++;
+				continue;
+			}
+			if(IS_HIGH_SURROGATE(ptr->Char.UnicodeChar) == true) {
+				work_pntX += gFontW;
+				ptr++;
+				continue;
+			}
+			if (is_dblchar_cjk(get_ucs(ptr)) == true) {
+				work_pntX += gFontW * 2;
+			} else {
+				work_pntX += gFontW;
+			}
+			ptr++;
+		}	
+
 		ptr = gScreen + CSI_WndCols(gCSI) * pntY + pntX;
 		pntX *= gFontW;
 		pntY *= gFontH;
-		*work_width = (ptr->Attributes & COMMON_LVB_LEADING_BYTE) ? gFontW*2 : gFontW;
+		if (is_dblchar_cjk(get_ucs(ptr)) == true) {
+			*work_width = gFontW*2;
+		} else {
+			*work_width = gFontW;
+		}
 		if(!gFocus){
 			HPEN hPen = CreatePen(PS_SOLID, 1, gColorTable[ color_bg ]);
 			HPEN hOldPen = (HPEN)SelectObject(hDC, hPen);
@@ -324,8 +324,21 @@ static void __draw_screen(HDC hDC)
 			SetTextColor(hDC, gColorTable[ color_fg ]);
 			SetBkColor(  hDC, gColorTable[ color_bg ]);
 			SetBkMode(hDC, OPAQUE);
-			ExtTextOut(hDC, pntX, pntY, 0, NULL,
-					&ptr->Char.UnicodeChar, 1, work_width);
+			if (IS_HIGH_SURROGATE(ptr->Char.UnicodeChar)) {
+				wchar_t src[2];
+				src[0] = ptr->Char.UnicodeChar;
+				if (ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+					src[1] = (ptr+2)->Char.UnicodeChar;
+				} else {
+					src[1] = (ptr+1)->Char.UnicodeChar;
+				}
+				*work_width = *work_width/2;		// 苦肉の策
+				ExtTextOut(hDC, work_pntX, pntY, ETO_CLIPPED, NULL,
+						src, 2, work_width);
+			} else {
+				ExtTextOut(hDC, work_pntX, pntY, 0, NULL,
+						&ptr->Char.UnicodeChar, 1, work_width);
+			}
 		}
 	}
 
@@ -420,7 +433,7 @@ static void __set_console_window_size(LONG cols, LONG rows)
 /*----------*/
 void	onSizing(HWND hWnd, DWORD side, LPRECT rc)
 {
-	trace("onSizing\n");
+	trace(L"onSizing\n");
 	LONG fw = (gFrame.right - gFrame.left) + (gBorderSize * 2);
 	LONG fh = (gFrame.bottom - gFrame.top) + (gBorderSize * 2);
 	LONG width  = rc->right - rc->left;
@@ -448,7 +461,7 @@ void	onSizing(HWND hWnd, DWORD side, LPRECT rc)
 /*----------*/
 void	onWindowPosChange(HWND hWnd, WINDOWPOS* wndpos)
 {
-	trace("onWindowPosChange\n");
+	trace(L"onWindowPosChange\n");
 	if(!(wndpos->flags & SWP_NOSIZE) && !IsIconic(hWnd)) {
 		LONG fw = (gFrame.right - gFrame.left) + (gBorderSize * 2);
 		LONG fh = (gFrame.bottom - gFrame.top) + (gBorderSize * 2);
@@ -470,6 +483,27 @@ static void __set_ime_position(HWND hWnd)
 	HIMC imc = ImmGetContext(hWnd);
 	LONG px = gCSI->dwCursorPosition.X - gCSI->srWindow.Left;
 	LONG py = gCSI->dwCursorPosition.Y - gCSI->srWindow.Top;
+
+	CHAR_INFO *ptr = gScreen + CSI_WndCols(gCSI) * py;
+	LONG work_px = 0;
+	for (int i=0; i<px; i++) {
+		if (IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
+			ptr++;
+			continue;
+		}
+		if (is_dblchar_cjk(get_ucs(ptr)) == true) {
+			if((ptr->Attributes & COMMON_LVB_TRAILING_BYTE)) {
+				// do nothing
+			} else {
+				work_px += 2;
+			}
+		} else {
+			work_px += 1;
+		}
+		ptr++;
+	}
+	px = work_px;
+
 	COMPOSITIONFORM cf;
 	cf.dwStyle = CFS_POINT;
 	cf.ptCurrentPos.x = px * gFontW + gBorderSize;
@@ -533,7 +567,7 @@ void	onTimer(HWND hWnd)
 			sr.Bottom = csi->srWindow.Bottom;
 			size.Y = sr.Bottom - sr.Top +1;
 		}
-		ReadConsoleOutput_Unicode(gStdOut, ptr, size, pos, &sr);
+		ReadConsoleOutput(gStdOut, ptr, size, pos, &sr);
 		ptr += size.X * size.Y;
 		sr.Top = sr.Bottom +1;
 	} while(sr.Top <= csi->srWindow.Bottom);
@@ -766,11 +800,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 /*----------*/
 static BOOL create_window(ckOpt& opt)
 {
-	trace("create_window\n");
+	trace(L"create_window\n");
 
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	LPCWSTR	className = L"CkwWindowClass";
-	const char*	conf_icon;
+	const wchar_t*	conf_icon;
 	WNDCLASSEX wc;
 	DWORD	style = WS_OVERLAPPEDWINDOW;
 	DWORD	exstyle = WS_EX_ACCEPTFILES;
@@ -801,12 +835,8 @@ static BOOL create_window(ckOpt& opt)
 		icon   = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICON), IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_DEFAULTCOLOR);
 		iconsm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICON), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	}else{
-		LPWSTR icon_path = new wchar_t[ strlen(conf_icon)+1 ];
-		ZeroMemory(icon_path, sizeof(wchar_t) * (strlen(conf_icon)+1));
-		MultiByteToWideChar(CP_ACP, 0, conf_icon, (int)strlen(conf_icon), icon_path, (int)(sizeof(wchar_t) * (strlen(conf_icon)+1)) );
-		icon   = (HICON)LoadImage(NULL, icon_path, IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_LOADFROMFILE);
-		iconsm = (HICON)LoadImage(NULL, icon_path, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
-		delete [] icon_path;
+		icon   = (HICON)LoadImage(NULL, conf_icon, IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_LOADFROMFILE);
+		iconsm = (HICON)LoadImage(NULL, conf_icon, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
 	}
 
 	/* calc window size */
@@ -887,42 +917,42 @@ static BOOL create_window(ckOpt& opt)
 	return(TRUE);
 }
 
-static BOOL set_current_directory(const char *dir)
+static BOOL set_current_directory(const wchar_t *dir)
 {
-	trace("set_current_directory\n");
+	trace(L"set_current_directory\n");
 	if (!dir) return(TRUE);
 
-	std::string cwd = dir;
-	size_t index = cwd.find("\"");
-	if (index != std::string::npos) {
+	std::wstring cwd = dir;
+	size_t index = cwd.find(L"\"");
+	if (index != std::wstring::npos) {
 		cwd.resize(index+1);
-		cwd[index] = '\\';
+		cwd[index] = L'\\';
 	}
-	BOOL b = SetCurrentDirectoryA(cwd.c_str());
+	BOOL b = SetCurrentDirectory(cwd.c_str());
 
 	return b;
 }
 
 /*----------*/
-static BOOL create_child_process(const char* cmd)
+static BOOL create_child_process(const wchar_t* cmd)
 {
-	trace("create_child_process\n");
+	trace(L"create_child_process\n");
 
-	char* buf = NULL;
+	wchar_t* buf = NULL;
 
 	if(!cmd || !cmd[0]) {
-		buf = new char[32768];
+		buf = new wchar_t[32768];
 		buf[0] = 0;
-		if(!GetEnvironmentVariableA("COMSPEC", buf, 32768))
-			strcpy(buf, "cmd.exe");
+		if(!GetEnvironmentVariable(L"COMSPEC", buf, 32768))
+			lstrcpy(buf, L"cmd.exe");
 	}
 	else {
-		buf = new char[ strlen(cmd)+1 ];
-		strcpy(buf, cmd);
+		buf = new wchar_t[ lstrlen(cmd)+1 ];
+		lstrcpy(buf, cmd);
 	}
 
 	PROCESS_INFORMATION pi;
-	STARTUPINFOA si;
+	STARTUPINFO si;
 	memset(&si, 0, sizeof(si));
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESTDHANDLES;
@@ -930,7 +960,7 @@ static BOOL create_child_process(const char* cmd)
 	si.hStdOutput = gStdOut;
 	si.hStdError  = gStdErr;
 
-	if(! CreateProcessA(NULL, buf, NULL, NULL, TRUE,
+	if(! CreateProcess(NULL, buf, NULL, NULL, TRUE,
 			    0, NULL, NULL, &si, &pi)) {
 		delete [] buf;
 		return(FALSE);
@@ -942,9 +972,9 @@ static BOOL create_child_process(const char* cmd)
 }
 
 /*----------*/
-static BOOL create_font(const char* name, int height)
+static BOOL create_font(const wchar_t* name, int height)
 {
-	trace("create_font\n");
+	trace(L"create_font\n");
 
 	memset(&gFontLog, 0, sizeof(gFontLog));
 	gFontLog.lfHeight = -height;
@@ -960,9 +990,8 @@ static BOOL create_font(const char* name, int height)
 	gFontLog.lfClipPrecision = CLIP_DEFAULT_PRECIS;
 	gFontLog.lfQuality = DEFAULT_QUALITY;
 	gFontLog.lfPitchAndFamily = FIXED_PITCH | FF_DONTCARE;
-	if(name) {
-		MultiByteToWideChar(CP_ACP,0, name, -1, gFontLog.lfFaceName, LF_FACESIZE);
-	}
+
+	lstrcpy(gFontLog.lfFaceName, name);
 
 	gFont = CreateFontIndirect(&gFontLog);
 
@@ -1046,8 +1075,8 @@ static void __hide_alloc_console()
 
 	/* check */
 	if(si.dwFlags == backup_flags && si.wShowWindow == backup_show) {
-		// 詳細は不明だがSTARTF_TITLEISLINKNAMEが立っていると、
-		// Console窓隠しに失敗するので除去(Win7-64bit)
+		// ショートカットからの起動する(STARTF_TITLEISLINKNAMEが立つ)と、
+		// Console窓を隠すのに失敗するので除去
 		if (*pflags & STARTF_TITLEISLINKNAME) {
 			*pflags &= ~STARTF_TITLEISLINKNAME;
 		}
@@ -1065,7 +1094,6 @@ static void __hide_alloc_console()
 	while((gConWnd = GetConsoleWindow()) == NULL) {
 		Sleep(10);
 	}
-
 	if (!bResult){
 		while (!IsWindowVisible(gConWnd)) {
 			Sleep(10);
@@ -1122,40 +1150,16 @@ static BOOL create_console(ckOpt& opt)
 	if(!gConWnd || !gStdIn || !gStdOut || !gStdErr)
 		return(FALSE);
 
-	HINSTANCE hLib;
-	hLib = LoadLibraryW( L"KERNEL32.DLL" );
-	if (hLib == NULL)
-		goto done;
-
-	#define GetProc( proc ) \
-	do { \
-		proc = (proc##T)GetProcAddress( hLib, #proc ); \
-		if (proc == NULL) \
-			goto freelib; \
-	} while (0)
-	GetProc( GetConsoleFontInfo );
-	GetProc( GetNumberOfConsoleFonts );
-	GetProc( SetConsoleFont );
-	#undef GetProc
-
-	{
-		CONSOLE_FONT font[MAX_FONTS];
-		DWORD fonts;
-		fonts = GetNumberOfConsoleFonts();
-		if (fonts > MAX_FONTS)
-			fonts = MAX_FONTS;
-	
-		GetConsoleFontInfo(gStdOut, 0, fonts, font);
-		CONSOLE_FONT minimalFont = { 0, {0, 0}};
-		for(DWORD i=0;i<fonts;i++){
-			if(minimalFont.dim.X < font[i].dim.X && minimalFont.dim.Y < font[i].dim.Y)
-				minimalFont = font[i];
-		}
-		SetConsoleFont(gStdOut, minimalFont.index);
+	// 最大化不具合の解消の為フォントを最小化
+	// レイアウト崩れ/CP65001での日本語出力対策でMS GOTHICを指定
+	CONSOLE_FONT_INFOEX info = {0};
+	info.cbSize       = sizeof(info);
+	info.FontWeight   = FW_NORMAL;
+	info.dwFontSize.Y = 6;
+	lstrcpyn(info.FaceName, L"MS GOTHIC", LF_FACESIZE);
+	if (SetCurrentConsoleFontEx(gStdOut, FALSE, &info) == FALSE) {
+		return(FALSE);
 	}
-	freelib:
-		FreeLibrary( hLib );
-	done:
 
 	/* set buffer & window size */
 	COORD size;
@@ -1180,23 +1184,10 @@ BOOL init_options(ckOpt& opt)
 {
 	/* create argv */
 	int	i, argc;
-	LPWSTR*	wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	char**	argv = new char*[argc+1];
-	argv[argc] = 0;
-	for(i = 0 ; i < argc ; i++) {
-		DWORD wlen = (DWORD) wcslen(wargv[i]);
-		DWORD alen = wlen * 2 + 16;
-		argv[i] = new char[alen];
-		alen = WideCharToMultiByte(CP_ACP, 0, wargv[i],wlen, argv[i],alen,NULL,NULL);
-		argv[i][alen] = 0;
-	}
+	LPWSTR*	argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
 	opt.loadXdefaults();
 	bool result = opt.set(argc, argv);
-
-	for(i = 0 ; i < argc ; i++)
-		delete [] argv[i];
-	delete [] argv;
 
 	if(!result) return(FALSE);
 
@@ -1215,7 +1206,7 @@ BOOL init_options(ckOpt& opt)
 	gLineSpace = opt.getLineSpace();
 
 	if(opt.getBgBmp()) {
-		gBgBmp = (HBITMAP)LoadImageA(NULL, opt.getBgBmp(),
+		gBgBmp = (HBITMAP)LoadImage(NULL, opt.getBgBmp(),
 				IMAGE_BITMAP, 0,0, LR_LOADFROMFILE);
 	}
 	if(gBgBmp) {
@@ -1234,14 +1225,13 @@ BOOL init_options(ckOpt& opt)
 	gCurBlink = opt.isCurBlink();
 
 	if(gTitle) delete [] gTitle;
-	const char *conf_title = opt.getTitle();
+	const wchar_t *conf_title = opt.getTitle();
 	if(!conf_title || !conf_title[0]){
-		gTitle = new wchar_t[ wcslen(L"ckw")+1 ];
-		wcscpy(gTitle, L"ckw");
+		gTitle = new wchar_t[ lstrlen(L"ckw")+1 ];
+		wcscpy_s(gTitle, lstrlen(L"ckw")+1, L"ckw");
 	}else{
-		gTitle = new wchar_t[ strlen(conf_title)+1 ];
-		ZeroMemory(gTitle, sizeof(wchar_t) * (strlen(conf_title)+1));
-		MultiByteToWideChar(CP_ACP, 0, conf_title, (int)strlen(conf_title), gTitle, (int)(sizeof(wchar_t) * (strlen(conf_title)+1)) );
+		gTitle = new wchar_t[ lstrlen(conf_title)+1 ];
+		wcscpy_s(gTitle, lstrlen(conf_title)+1, conf_title);
 	}
 
 	return(TRUE);
@@ -1256,22 +1246,22 @@ static BOOL initialize()
 		return(FALSE);
 	}
 	if(! create_console(opt)) {
-		trace("create_console failed\n");
+		trace(L"create_console failed\n");
 		return(FALSE);
 	}
 	if(! create_font(opt.getFont(), opt.getFontSize())) {
-		trace("create_font failed\n");
+		trace(L"create_font failed\n");
 		return(FALSE);
 	}
 	if (! set_current_directory(opt.getCurDir())) {
-		trace("set_current_directory failed\n");
+		trace(L"set_current_directory failed\n");
 	}
 	if(! create_child_process(opt.getCmd())) {
-		trace("create_child_process failed\n");
+		trace(L"create_child_process failed\n");
 		return(FALSE);
 	}
 	if(! create_window(opt)) {
-		trace("create_window failed\n");
+		trace(L"create_window failed\n");
 		return(FALSE);
 	}
 
