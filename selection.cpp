@@ -160,14 +160,14 @@ void	selectionClear(HWND hWnd)
 		return;
 	gSelectRect.Left = gSelectRect.Right = \
 	gSelectRect.Top = gSelectRect.Bottom = 0;
-	InvalidateRect(hWnd, NULL, FALSE);
+	InvalidateRect(hWnd, nullptr, FALSE);
 }
 
 /*----------*/
 wchar_t * selectionGetString()
 {
 	if( __select_invalid() )
-		return(NULL);
+		return(nullptr);
 
 	int nb, y;
 
@@ -259,7 +259,7 @@ void	onLBtnDown(HWND hWnd, int x, int y)
 	gSelectRect.Top  = gSelectRect.Bottom = y;
 
 	__select_expand();
-	InvalidateRect(hWnd, NULL, FALSE);
+	InvalidateRect(hWnd, nullptr, FALSE);
 }
 
 /*----------*/
@@ -306,7 +306,7 @@ void	onMouseMove(HWND hWnd, int x, int y)
 	__select_expand();
 
 	if(memcmp(&bak, &gSelectRect, sizeof(bak))) {
-		InvalidateRect(hWnd, NULL, FALSE);
+		InvalidateRect(hWnd, nullptr, FALSE);
 	}
 }
 

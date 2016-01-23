@@ -25,12 +25,12 @@
 
 /*****************************************************************************/
 
-HANDLE	gStdIn = NULL;	/* console */
-HANDLE	gStdOut = NULL;
-HANDLE	gStdErr = NULL;
-HWND	gConWnd = NULL;
+HANDLE	gStdIn = nullptr;	/* console */
+HANDLE	gStdOut = nullptr;
+HANDLE	gStdErr = nullptr;
+HWND	gConWnd = nullptr;
 
-HANDLE	gChild = NULL;	/* child process */
+HANDLE	gChild = nullptr;	/* child process */
 
 LOGFONT	gFontLog;	/* font IME */
 HFONT	gFont;		/* font */
@@ -41,8 +41,8 @@ DWORD	gWinW;		/* window columns */
 DWORD	gWinH;		/* window rows */
 
 RECT	gFrame;		/* window frame size */
-HBITMAP gBgBmp = NULL;	/* background image */
-HBRUSH	gBgBrush = NULL;/* background brush */
+HBITMAP gBgBmp = nullptr;	/* background image */
+HBRUSH	gBgBrush = nullptr;/* background brush */
 DWORD	gBorderSize = 0;/* internal border */
 DWORD	gLineSpace = 0;	/* line space */
 BOOL	gVScrollHide = FALSE;
@@ -59,9 +59,9 @@ BOOL	gCurHide = FALSE;
 BOOL	gFocus = FALSE;
 
 /* screen buffer - copy */
-CONSOLE_SCREEN_BUFFER_INFO* gCSI = NULL;
-CHAR_INFO*	gScreen = NULL;
-wchar_t*	gTitle = NULL;
+CONSOLE_SCREEN_BUFFER_INFO* gCSI = nullptr;
+CHAR_INFO*	gScreen = nullptr;
+wchar_t*	gTitle = nullptr;
 
 /* index color */
 enum {
@@ -102,7 +102,7 @@ inline void __draw_invert_char_rect(HDC hDC, RECT& rc)
 	rc.right  *= gFontW;
 	rc.top    *= gFontH;
 	rc.bottom *= gFontH;
-	BitBlt(hDC, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, NULL,0,0, DSTINVERT);
+	BitBlt(hDC, rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, nullptr,0,0, DSTINVERT);
 }
 
 /*----------*/
@@ -228,7 +228,7 @@ static void __draw_screen(HDC hDC)
 			if(color_fg != work_color_fg ||
 			   color_bg != work_color_bg) {
 				if(work_text_ptr > work_text) {
-					ExtTextOut(hDC, work_pntX, pntY, 0, NULL,
+					ExtTextOut(hDC, work_pntX, pntY, 0, nullptr,
 						   (LPCWSTR)work_text,
 						   (UINT)(work_text_ptr - work_text),
 						   work_width);
@@ -258,7 +258,7 @@ static void __draw_screen(HDC hDC)
 		}
 
 		if(work_text_ptr > work_text) {
-			ExtTextOut(hDC, work_pntX, pntY, 0, NULL,
+			ExtTextOut(hDC, work_pntX, pntY, 0, nullptr,
 				   (LPCWSTR)work_text,
 				   (UINT)(work_text_ptr - work_text),
 				   work_width);
@@ -333,10 +333,10 @@ static void __draw_screen(HDC hDC)
 					src[1] = (ptr+1)->Char.UnicodeChar;
 				}
 				*work_width = *work_width/2;		// 苦肉の策
-				ExtTextOut(hDC, work_pntX, pntY, ETO_CLIPPED, NULL,
+				ExtTextOut(hDC, work_pntX, pntY, ETO_CLIPPED, nullptr,
 						src, 2, work_width);
 			} else {
-				ExtTextOut(hDC, work_pntX, pntY, 0, NULL,
+				ExtTextOut(hDC, work_pntX, pntY, 0, nullptr,
 						&ptr->Char.UnicodeChar, 1, work_width);
 			}
 		}
@@ -383,9 +383,9 @@ void	onPaint(HWND hWnd)
 	}
 
 	if(gScreen && gCSI) {
-		SetWindowOrgEx(hMemDC, -(int)gBorderSize, -(int)gBorderSize, NULL);
+		SetWindowOrgEx(hMemDC, -(int)gBorderSize, -(int)gBorderSize, nullptr);
 		__draw_screen(hMemDC);
-		SetWindowOrgEx(hMemDC, 0, 0, NULL);
+		SetWindowOrgEx(hMemDC, 0, 0, nullptr);
 	}
 
 	BitBlt(hDC,rc.left,rc.top, rc.right-rc.left, rc.bottom-rc.top, hMemDC,0,0, SRCCOPY);
@@ -524,7 +524,7 @@ void	onTimer(HWND hWnd)
 	if(gStdOut) CloseHandle(gStdOut);
 	gStdOut = CreateFile(L"CONOUT$", GENERIC_READ|GENERIC_WRITE,
 			     FILE_SHARE_READ|FILE_SHARE_WRITE,
-			     NULL, OPEN_EXISTING, 0, NULL);
+			     nullptr, OPEN_EXISTING, 0, nullptr);
 
 	/* title update */
 	static int timer_count = 0;
@@ -579,7 +579,7 @@ void	onTimer(HWND hWnd)
 		if(curr >= gCurBlinkNext) {
 			gCurHide = !gCurHide;
 			gCurBlinkNext = curr + caret_blink_time;
-			InvalidateRect(hWnd, NULL, TRUE);
+			InvalidateRect(hWnd, nullptr, TRUE);
 		}
 	}
 
@@ -600,7 +600,7 @@ void	onTimer(HWND hWnd)
 	gCSI = csi;
 
 	/* redraw request */
-	InvalidateRect(hWnd, NULL, TRUE);
+	InvalidateRect(hWnd, nullptr, TRUE);
 
 	/* set vertical scrollbar status */
 	if(!gVScrollHide) {
@@ -623,7 +623,7 @@ void	onTimer(HWND hWnd)
 	if(gWinW != w || gWinH != h) {
 		w = (w * gFontW) + (gBorderSize * 2) + (gFrame.right - gFrame.left);
 		h = (h * gFontH) + (gBorderSize * 2) + (gFrame.bottom - gFrame.top);
-		SetWindowPos(hWnd, NULL, 0,0,w,h, SWP_NOMOVE|SWP_NOZORDER);
+		SetWindowPos(hWnd, nullptr, 0,0,w,h, SWP_NOMOVE|SWP_NOZORDER);
 	}
 }
 
@@ -638,7 +638,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 			ImmSetCompositionFontW(imc, &gFontLog);
 			ImmReleaseContext(hWnd, imc);
 		}
-		SetTimer(hWnd, 0x3571, 10, NULL);
+		SetTimer(hWnd, 0x3571, 10, nullptr);
 		break;
 	case WM_DESTROY:
 		sysicon_destroy(hWnd);
@@ -709,7 +709,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 			HIMC imc = ImmGetContext(hWnd);
 			gImeOn = ImmGetOpenStatus(imc);
 			ImmReleaseContext(hWnd, imc);
-			InvalidateRect(hWnd, NULL, TRUE);
+			InvalidateRect(hWnd, nullptr, TRUE);
 		}
 		return( DefWindowProc(hWnd, msg, wp, lp) );
 
@@ -777,11 +777,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 	case WM_SETFOCUS:
 		gFocus = TRUE;
 		if(gCurBlink) gCurBlinkNext = GetTickCount() + (gCurHide? 0: GetCaretBlinkTime());
-		InvalidateRect(hWnd, NULL, TRUE);
+		InvalidateRect(hWnd, nullptr, TRUE);
 		break;
 	case WM_KILLFOCUS:
 		gFocus = FALSE;
-		InvalidateRect(hWnd, NULL, TRUE);
+		InvalidateRect(hWnd, nullptr, TRUE);
 		break;
 	case WM_SIZE:
 		if(gMinimizeToTray && wp == SIZE_MINIMIZED) {
@@ -802,7 +802,7 @@ static BOOL create_window(ckOpt& opt)
 {
 	trace(L"create_window\n");
 
-	HINSTANCE hInstance = GetModuleHandle(NULL);
+	HINSTANCE hInstance = GetModuleHandle(nullptr);
 	LPCWSTR	className = L"CkwWindowClass";
 	const wchar_t*	conf_icon;
 	WNDCLASSEX wc;
@@ -835,8 +835,8 @@ static BOOL create_window(ckOpt& opt)
 		icon   = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICON), IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_DEFAULTCOLOR);
 		iconsm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICON), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 	}else{
-		icon   = (HICON)LoadImage(NULL, conf_icon, IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_LOADFROMFILE);
-		iconsm = (HICON)LoadImage(NULL, conf_icon, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
+		icon   = (HICON)LoadImage(nullptr, conf_icon, IMAGE_ICON, GetSystemMetrics(SM_CXICON),   GetSystemMetrics(SM_CYICON),   LR_LOADFROMFILE);
+		iconsm = (HICON)LoadImage(nullptr, conf_icon, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
 	}
 
 	/* calc window size */
@@ -884,9 +884,9 @@ static BOOL create_window(ckOpt& opt)
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInstance;
 	wc.hIcon = icon;
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wc.hbrBackground = CreateSolidBrush(gColorTable[0]);
-	wc.lpszMenuName = NULL;
+	wc.lpszMenuName = nullptr;
 	wc.lpszClassName = className;
 	wc.hIconSm = iconsm;
 	if(! RegisterClassEx(&wc))
@@ -894,7 +894,7 @@ static BOOL create_window(ckOpt& opt)
 
 	HWND hWnd = CreateWindowEx(exstyle, className, gTitle, style,
 				   posx, posy, width, height,
-				   NULL, NULL, hInstance, NULL);
+				   nullptr, nullptr, hInstance, nullptr);
 	if(!hWnd){
 		return(FALSE);
         }
@@ -938,7 +938,7 @@ static BOOL create_child_process(const wchar_t* cmd)
 {
 	trace(L"create_child_process\n");
 
-	wchar_t* buf = NULL;
+	wchar_t* buf = nullptr;
 
 	if(!cmd || !cmd[0]) {
 		buf = new wchar_t[32768];
@@ -960,8 +960,8 @@ static BOOL create_child_process(const wchar_t* cmd)
 	si.hStdOutput = gStdOut;
 	si.hStdError  = gStdErr;
 
-	if(! CreateProcess(NULL, buf, NULL, NULL, TRUE,
-			    0, NULL, NULL, &si, &pi)) {
+	if(! CreateProcess(nullptr, buf, nullptr, nullptr, TRUE,
+			    0, nullptr, nullptr, &si, &pi)) {
 		delete [] buf;
 		return(FALSE);
 	}
@@ -996,7 +996,7 @@ static BOOL create_font(const wchar_t* name, int height)
 	gFont = CreateFontIndirect(&gFontLog);
 
 	/* calc font size */
-	HDC	hDC = GetDC(NULL);
+	HDC	hDC = GetDC(nullptr);
 	HGDIOBJ	oldfont = SelectObject(hDC, gFont);
 	TEXTMETRIC met;
 	INT	width1[26], width2[26], width = 0;
@@ -1005,7 +1005,7 @@ static BOOL create_font(const wchar_t* name, int height)
 	GetCharWidth32(hDC, 0x41, 0x5A, width1);
 	GetCharWidth32(hDC, 0x61, 0x7A, width2);
 	SelectObject(hDC, oldfont);
-	ReleaseDC(NULL, hDC);
+	ReleaseDC(nullptr, hDC);
 
 	for(int i = 0 ; i < 26 ; i++) {
 		width += width1[i];
@@ -1091,7 +1091,7 @@ static void __hide_alloc_console()
 	*pflags = backup_flags;
 	*pshow  = backup_show;
 
-	while((gConWnd = GetConsoleWindow()) == NULL) {
+	while((gConWnd = GetConsoleWindow()) == nullptr) {
 		Sleep(10);
 	}
 	if (!bResult){
@@ -1134,18 +1134,18 @@ static BOOL create_console(ckOpt& opt)
 
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(sa);
-	sa.lpSecurityDescriptor = NULL;
+	sa.lpSecurityDescriptor = nullptr;
 	sa.bInheritHandle = TRUE;
 
 	gStdIn  = CreateFile(L"CONIN$",  GENERIC_READ|GENERIC_WRITE,
 			     FILE_SHARE_READ|FILE_SHARE_WRITE,
-			     &sa, OPEN_EXISTING, 0, NULL);
+			     &sa, OPEN_EXISTING, 0, nullptr);
 	gStdOut = CreateFile(L"CONOUT$",  GENERIC_READ|GENERIC_WRITE,
 			     FILE_SHARE_READ|FILE_SHARE_WRITE,
-			     &sa, OPEN_EXISTING, 0, NULL);
+			     &sa, OPEN_EXISTING, 0, nullptr);
 	gStdErr = CreateFile(L"CONOUT$",  GENERIC_READ|GENERIC_WRITE,
 			     FILE_SHARE_READ|FILE_SHARE_WRITE,
-			     &sa, OPEN_EXISTING, 0, NULL);
+			     &sa, OPEN_EXISTING, 0, nullptr);
 
 	if(!gConWnd || !gStdIn || !gStdOut || !gStdErr)
 		return(FALSE);
@@ -1206,7 +1206,7 @@ BOOL init_options(ckOpt& opt)
 	gLineSpace = opt.getLineSpace();
 
 	if(opt.getBgBmp()) {
-		gBgBmp = (HBITMAP)LoadImage(NULL, opt.getBgBmp(),
+		gBgBmp = (HBITMAP)LoadImage(nullptr, opt.getBgBmp(),
 				IMAGE_BITMAP, 0,0, LR_LOADFROMFILE);
 	}
 	if(gBgBmp) {
@@ -1274,27 +1274,27 @@ static BOOL initialize()
 }
 
 #define SAFE_CloseHandle(handle) \
-	if(handle) { CloseHandle(handle); handle = NULL; }
+	if(handle) { CloseHandle(handle); handle = nullptr; }
 
 #define SAFE_DeleteObject(handle) \
-	if(handle) { DeleteObject(handle); handle = NULL; }
+	if(handle) { DeleteObject(handle); handle = nullptr; }
 
 /*----------*/
 static void _terminate()
 {
 	if(gTitle) {
 		delete [] gTitle;
-		gTitle = NULL;
+		gTitle = nullptr;
 	}
 	if(gScreen) {
 		delete [] gScreen;
-		gScreen = NULL;
+		gScreen = nullptr;
 	}
 	if(gCSI) {
 		delete gCSI;
-		gCSI = NULL;
+		gCSI = nullptr;
 	}
-	gConWnd = NULL;
+	gConWnd = nullptr;
 	SAFE_CloseHandle(gStdIn);
 	SAFE_CloseHandle(gStdOut);
 	SAFE_CloseHandle(gStdErr);
@@ -1328,7 +1328,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nCmd
 
 	if(initialize()) {
 		MSG msg;
-		while(GetMessage(&msg, NULL, 0,0)) {
+		while(GetMessage(&msg, nullptr, 0,0)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -1346,8 +1346,8 @@ void makeNewWindow()
 
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));
-	if(CreateProcess(NULL, GetCommandLine(), NULL, NULL, FALSE, 0,
-					   NULL, NULL, &si, &pi)){
+	if(CreateProcess(nullptr, GetCommandLine(), nullptr, nullptr, FALSE, 0,
+					   nullptr, nullptr, &si, &pi)){
 		// 使用しないので，すぐにクローズしてよい
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);

@@ -10,7 +10,7 @@ public:
 	ckOpt();
 	~ckOpt();
 
-	void		setFile(const wchar_t *path=NULL);
+	void		setFile(const wchar_t *path=nullptr);
 	void		loadXdefaults();
 	bool		set(int argc, wchar_t *argv[]);
 
@@ -45,28 +45,28 @@ public:
 
 	const wchar_t*	getCmd()
 	{
-		return((m_cmd.size()) ? m_cmd.c_str() : NULL);
+		return((m_cmd.size()) ? m_cmd.c_str() : nullptr);
 	}
 	int		getFontSize()		{ return(m_fontSize); }
 	const wchar_t*	getFont()
 	{
-		return((m_font.size()) ? m_font.c_str() : NULL);
+		return((m_font.size()) ? m_font.c_str() : nullptr);
 	}
 	const wchar_t*	getBgBmp()
 	{
-		return((m_bgBmp.size()) ? m_bgBmp.c_str() : NULL);
+		return((m_bgBmp.size()) ? m_bgBmp.c_str() : nullptr);
 	}
 	const wchar_t*	getCurDir()
 	{
-		return((m_curDir.size()) ? m_curDir.c_str() : NULL);
+		return((m_curDir.size()) ? m_curDir.c_str() : nullptr);
 	}
 	const wchar_t*	getTitle()
 	{
-		return((m_title.size()) ? m_title.c_str() : NULL);
+		return((m_title.size()) ? m_title.c_str() : nullptr);
 	}
 	const wchar_t*	getIcon()
 	{
-		return((m_icon.size()) ? m_icon.c_str() : NULL);
+		return((m_icon.size()) ? m_icon.c_str() : nullptr);
 	}
 
 

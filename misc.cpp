@@ -192,9 +192,9 @@ void	onDropFile(HDROP hDrop)
 	wchar_t	wbuf[MAX_PATH+32];
 	wchar_t* wp;
 
-	nb = DragQueryFile(hDrop, (DWORD)-1, NULL, 0);
+	nb = DragQueryFile(hDrop, (DWORD)-1, nullptr, 0);
 	for(i = 0 ; i < nb ; i++) {
-		len = DragQueryFile(hDrop, i, NULL, 0);
+		len = DragQueryFile(hDrop, i, nullptr, 0);
 		if(len < 1 || len > MAX_PATH)
 			continue;
 		wp = wbuf + 1;
@@ -310,7 +310,7 @@ void	sysmenu_init(HWND hWnd)
 void    get_directory_path(wchar_t *path)
 {
 	wchar_t *c;
-	GetModuleFileName(NULL, path, MAX_PATH);
+	GetModuleFileName(nullptr, path, MAX_PATH);
 	c = wcsrchr(path, L'\\');
 	if(c) *c = 0;
 }
@@ -445,7 +445,7 @@ BOOL	onSysCommand(HWND hWnd, DWORD id)
 		copyAllStringToClipboard(hWnd);
 		return(TRUE);
 	case IDM_ABOUT:
-		DialogBox(GetModuleHandle(NULL),
+		DialogBox(GetModuleHandle(nullptr),
 			  MAKEINTRESOURCE(IDD_DIALOG1),
 			  hWnd,
 			  AboutDlgProc);
@@ -555,7 +555,7 @@ void	desktopToTray(HWND hWnd)
 		Shell_NotifyIcon(NIM_MODIFY, &sysicon_notif);
 	}
 
-	SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_HIDEWINDOW);
+	SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_HIDEWINDOW);
 }
 
 void	trayToDesktop(HWND hWnd)
@@ -569,7 +569,7 @@ void	trayToDesktop(HWND hWnd)
 		Shell_NotifyIcon(NIM_MODIFY, &sysicon_notif);
 	}
 
-	SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+	SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 	if(IsIconic(hWnd)) ShowWindow(hWnd, SW_RESTORE);
 }
 

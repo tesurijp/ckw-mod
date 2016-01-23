@@ -983,8 +983,8 @@ ckOpt::~ckOpt()
 {
 }
 
-#define _CHK_L(longName)  (longName && !lstrcmp(name, longName))
-#define _CHK_S(shortName) (!rsrc && shortName && !lstrcmp(name, shortName))
+#define _CHK_L(longName)  (longName!=nullptr && !lstrcmp(name, longName))
+#define _CHK_S(shortName) (!rsrc && shortName!=nullptr && !lstrcmp(name, shortName))
 
 #define CHK_MISC(longName, shortName, func) \
 	if(_CHK_L(longName) || _CHK_S(shortName)) { \
@@ -1019,23 +1019,23 @@ int	ckOpt::setOption(const wchar_t *name, const wchar_t *value, bool rsrc)
 
 	CHK_MISC(L"foreground",		L"fg",		lookupColor(value, m_colorFg));
 	CHK_MISC(L"background",		L"bg",		lookupColor(value, m_colorBg));
-	CHK_MISC(L"cursorColor",		L"cr",		lookupColor(value, m_colorCursor));
+	CHK_MISC(L"cursorColor",	L"cr",		lookupColor(value, m_colorCursor));
 	CHK_MISC(L"cursorImeColor",	L"cri",		lookupColor(value, m_colorCursorIme));
 	CHK_MISC(L"backgroundBitmap",	L"bitmap",	m_bgBmp = value);
-	CHK_MISC(L"icon",		NULL,		m_icon = value);
-	CHK_BOOL(L"alwaysTray",		L"tray",		m_alwaysTray);
+	CHK_MISC(L"icon",		nullptr,	m_icon = value);
+	CHK_BOOL(L"alwaysTray",		L"tray",	m_alwaysTray);
 	CHK_BOOL(L"minimizeToTray",	L"mintray",	m_minimizeToTray);
 	CHK_MISC(L"geometry",		L"g",		geometry(value));
-	CHK_BOOL(NULL, 			L"iconic",	m_isIconic);
+	CHK_BOOL(nullptr, 		L"iconic",	m_isIconic);
 	CHK_MISC(L"font",		L"fn",		m_font = value);
 	CHK_MISC(L"fontSize",		L"fs",		m_fontSize = _wtoi(value));
 	CHK_BOOL(L"scrollHide",		L"sh",		m_scrollHide);
-	CHK_BOOL(L"scrollRight",		L"sr",		m_scrollRight);
+	CHK_BOOL(L"scrollRight",	L"sr",		m_scrollRight);
 	CHK_MISC(L"saveLines",		L"sl",		m_saveLines = _wtoi(value));
 	CHK_MISC(L"internalBorder",	L"b",		m_borderSize = _wtoi(value));
 	CHK_MISC(L"lineSpace",		L"lsp",		m_lineSpace = _wtoi(value));
 	CHK_MISC(L"transp",		L"tr",		m_transp = _wtoi(value));
-	CHK_MISC(L"transpColor",		L"trc",		m_isTranspColor = lookupColor(value,m_transpColor));
+	CHK_MISC(L"transpColor",	L"trc",		m_isTranspColor = lookupColor(value,m_transpColor));
 	CHK_BOOL(L"topmost",		L"top",		m_isTopMost);
 	CHK_MISC(L"chdir",		L"cd",		m_curDir = value);
 	CHK_MISC(L"exec",		L"x",		m_cmd = value);
@@ -1061,28 +1061,28 @@ static void usage(bool isLong)
 	L"background",		L"bg",		L"color",	L"background color",
 	L"cursorColor",		L"cr",		L"color",	L"cursor color",
 	L"cursorImeColor",	L"cri",		L"color",	L"cursor color IME-on",
-	L"color0",		NULL,		L"color",	L"",
-	L"color1",		NULL,		L"color",	L"",
-	L"color2",		NULL,		L"color",	L"",
-	L"color3",		NULL,		L"color",	L"",
-	L"color4",		NULL,		L"color",	L"",
-	L"color5",		NULL,		L"color",	L"",
-	L"color6",		NULL,		L"color",	L"",
-	L"color7",		NULL,		L"color",	L"",
-	L"color8",		NULL,		L"color",	L"",
-	L"color9",		NULL,		L"color",	L"",
-	L"color10",		NULL,		L"color",	L"",
-	L"color11",		NULL,		L"color",	L"",
-	L"color12",		NULL,		L"color",	L"",
-	L"color13",		NULL,		L"color",	L"",
-	L"color14",		NULL,		L"color",	L"",
-	L"color15",		NULL,		L"color",	L"",
+	L"color0",		nullptr,		L"color",	L"",
+	L"color1",		nullptr,		L"color",	L"",
+	L"color2",		nullptr,		L"color",	L"",
+	L"color3",		nullptr,		L"color",	L"",
+	L"color4",		nullptr,		L"color",	L"",
+	L"color5",		nullptr,		L"color",	L"",
+	L"color6",		nullptr,		L"color",	L"",
+	L"color7",		nullptr,		L"color",	L"",
+	L"color8",		nullptr,		L"color",	L"",
+	L"color9",		nullptr,		L"color",	L"",
+	L"color10",		nullptr,		L"color",	L"",
+	L"color11",		nullptr,		L"color",	L"",
+	L"color12",		nullptr,		L"color",	L"",
+	L"color13",		nullptr,		L"color",	L"",
+	L"color14",		nullptr,		L"color",	L"",
+	L"color15",		nullptr,		L"color",	L"",
 	L"backgroundBitmap",	L"bitmap",	L"string",	L"background bmp file",
-	L"icon",			NULL,		L"string",	L"icon file",
+	L"icon",			nullptr,		L"string",	L"icon file",
 	L"alwaysTray", 		L"tray",		L"boolean",	L"always show tray icon",
 	L"minimizeToTray", 	L"mintray",	L"boolean",	L"minimize to task tray",
 	L"geometry",		L"g",		L"string",	L"window layout. ( ex. 80x24+0+0 )",
-	NULL, 			L"iconic",	L"boolean",	L"start iconic",
+	nullptr, 			L"iconic",	L"boolean",	L"start iconic",
 	L"font",			L"fn",		L"string",	L"text font name",
 	L"fontSize",		L"fs",		L"number",	L"text font size",
 	L"scrollHide",		L"sh",		L"boolean",	L"turn on/off scrollbar hide",
@@ -1149,7 +1149,7 @@ void	ckOpt::_loadXdefaults(const wchar_t *path)
 	fclose(fp);
 }
 
-void	ckOpt::setFile(const wchar_t *path /*=NULL*/)
+void	ckOpt::setFile(const wchar_t *path /*=nullptr*/)
 {
     if(path)
     {
@@ -1179,7 +1179,7 @@ void ckOpt::loadXdefaults()
   {
     wchar_t cfgfile[MAX_PATH] = L"_";
 
-    if (0 != GetModuleFileName(NULL, path, MAX_PATH)) {
+    if (0 != GetModuleFileName(nullptr, path, MAX_PATH)) {
 		wchar_t szDrive[MAX_PATH];
 		wchar_t szDir[MAX_PATH];
 		wchar_t szFile[MAX_PATH];
@@ -1195,7 +1195,7 @@ void ckOpt::loadXdefaults()
 		if (path[0] != L'\0') _loadXdefaults(path);
 
 		// directory execute exists
-		_wmakepath_s(path, MAX_PATH, szDrive, szDir, cfgfile, NULL);
+		_wmakepath_s(path, MAX_PATH, szDrive, szDir, cfgfile, nullptr);
 		_loadXdefaults(path);
 		_wmakepath_s(path, MAX_PATH, szDrive, szDir, szFile, L".cfg");
 		_loadXdefaults(path);
@@ -1237,7 +1237,7 @@ bool	ckOpt::set(int argc, wchar_t *argv[])
 			return(false);
 		}
 
-		skip = setOption(argv[i], (i+1<argc) ? argv[i+1] : NULL, false);
+		skip = setOption(argv[i], (i+1<argc) ? argv[i+1] : nullptr, false);
 		if(skip < 1) {
 			usage(false);
 			return(false);
