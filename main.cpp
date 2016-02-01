@@ -689,10 +689,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 			GetClientRect(hWnd, &rc);
 
 			if( y<0 ) {
-				PostMessage(gConWnd, WM_MOUSEWHEEL, WHEEL_DELTA<<16, y<<16|x );
+				PostMessage(gConWnd, WM_MOUSEWHEEL, WHEEL_DELTA, y<<16|x );
 			}
 			else if(y>=rc.bottom) {
-				PostMessage(gConWnd, WM_MOUSEWHEEL, -WHEEL_DELTA<<16, y<<16|x );
+				PostMessage(gConWnd, WM_MOUSEWHEEL, -WHEEL_DELTA, y<<16|x );
 			}
 		}
 		break;
