@@ -21,6 +21,7 @@
 #include "ckw.h"
 #include "rsrc.h"
 #include "encoding.h"
+#include "winmng.h"
 #include <imm.h>
 
 /*****************************************************************************/
@@ -29,6 +30,8 @@ HANDLE	gStdIn = nullptr;	/* console */
 HANDLE	gStdOut = nullptr;
 HANDLE	gStdErr = nullptr;
 HWND	gConWnd = nullptr;
+
+winmng gWinMng;
 
 HANDLE	gChild = nullptr;	/* child process */
 
@@ -754,6 +757,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 			if(msg == WM_KEYDOWN)
 				onPasteFromClipboard(hWnd);
 		}
+		else if(wp == VK_TAB  &&
+			(GetKeyState(VK_CONTROL) & 0x8000)) {
+			if(msg == WM_KEYDOWN) {
+				if (GetKeyState(VK_SHIFT) & 0x8000) {
+					gWinMng.select_next_window(-1);
+				} else {
+					gWinMng.select_next_window(1);
+				}
+			}
+		}
 		else {
 			PostMessage(gConWnd, msg, wp, lp);
 		}
@@ -899,6 +912,7 @@ static BOOL create_window(ckOpt& opt)
 		return(FALSE);
         }
 
+	gWinMng.register_window(hWnd);
 	sysmenu_init(hWnd);
 	sysicon_init(hWnd, iconsm, gTitle, opt.isAlwaysTray());
 
