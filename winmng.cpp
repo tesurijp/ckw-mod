@@ -22,14 +22,13 @@
 #include "ckw.h"
 #include "winmng.h"
 
-constexpr LPCTSTR TT_FILEMAPNAME = L"__ckw_window_memfile";
 HANDLE winmng::m_hMap = 0;
 winmng::winList *winmng::m_winList = nullptr;
 
 winmng::winmng() : m_win(nullptr)
 {
 	m_hMap = ::CreateFileMapping((HANDLE)-1, nullptr, PAGE_READWRITE,
-					0, sizeof(winList), TT_FILEMAPNAME);
+					0, sizeof(winList), L"__ckw_window_memfile");
 	bool firstCreate = false;
 	if (m_hMap != nullptr) {
 		firstCreate = (GetLastError() != ERROR_ALREADY_EXISTS);
@@ -86,10 +85,10 @@ bool winmng::unregister_window()
 	}
 
 	int i = 0;
-	while ((i<m_winList->count) && (m_winList->list[i]!=m_win)) {
+	while ((i < m_winList->count) && (m_winList->list[i] != m_win)) {
 		i++;
 	}
-	if (m_winList->list[i]!=m_win) {
+	if (m_winList->list[i] != m_win) {
 		return false;
 	}
 	for (int j=i ; j<m_winList->count-1 ; j++) {
@@ -103,16 +102,16 @@ bool winmng::unregister_window()
 	return true;
 }
 
-void winmng::select_window(int _winid)
+void winmng::select_window(int _winId)
 {
-	if ((_winid >= 0) && (_winid < m_winList->count)) {
-		if (::IsIconic(m_winList->list[_winid])) {
-			::ShowWindow(m_winList->list[_winid],SW_RESTORE);
+	if ((_winId >= 0) && (_winId < m_winList->count)) {
+		if (::IsIconic(m_winList->list[_winId])) {
+			::ShowWindow(m_winList->list[_winId],SW_RESTORE);
 		}
 		else {
-			::ShowWindow(m_winList->list[_winid],SW_SHOW);
+			::ShowWindow(m_winList->list[_winId],SW_SHOW);
 		}
-		::SetForegroundWindow(m_winList->list[_winid]);
+		::SetForegroundWindow(m_winList->list[_winId]);
 	}
 }
 
