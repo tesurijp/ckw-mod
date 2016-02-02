@@ -23,7 +23,8 @@ SRCS = main.cpp \
        misc.cpp \
        option.cpp \
        selection.cpp \
-       encoding.cpp
+       encoding.cpp \
+       winmng.cpp
 OBJS = $(SRCS:.cpp=.o) rsrc.res
 
 .SUFFIXES:
