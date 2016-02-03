@@ -1187,29 +1187,29 @@ void ckOpt::loadXdefaults()
 		_wsplitpath_s(path, szDrive, szDir, szFile, szBuf);
 		wcscat_s(cfgfile, szFile);
 
-		path[0] = L'\0';
+		// directory execute exists
+		_wmakepath_s(path, MAX_PATH, szDrive, szDir, szFile, L".cfg");
+		_loadXdefaults(path);	// ckw.cfg
+		_wmakepath_s(path, MAX_PATH, szDrive, szDir, cfgfile, nullptr);
+		_loadXdefaults(path);	// _ckw
+
 		// HOME or USERPROFILE
+		path[0] = L'\0';
 		if (!getconfigfile(L"HOME", cfgfile, path, MAX_PATH)) {
-		  getconfigfile(L"USERPROFILE", cfgfile, path, MAX_PATH);
+			if (!getconfigfile(L"USERPROFILE", cfgfile, path, MAX_PATH)) {
+				cfgfile[0] = L'.';	// .ckw
+				if (!getconfigfile(L"HOME", cfgfile, path, MAX_PATH)) {
+					getconfigfile(L"USERPROFILE", cfgfile, path, MAX_PATH);
+				}
+		  }
 		}
 		if (path[0] != L'\0') _loadXdefaults(path);
-
-		// directory execute exists
-		_wmakepath_s(path, MAX_PATH, szDrive, szDir, cfgfile, nullptr);
-		_loadXdefaults(path);
-		_wmakepath_s(path, MAX_PATH, szDrive, szDir, szFile, L".cfg");
-		_loadXdefaults(path);
     }
   }
   else
   {
     path[0] = L'\0';
     wcscpy_s(path, m_config_file);
-    _loadXdefaults(path);
-  }
-
-  if(GetEnvironmentVariable(L"HOME", path, MAX_PATH)) {
-    wcscat_s(path, L"\\.Xdefaults");
     _loadXdefaults(path);
   }
 }
