@@ -27,7 +27,7 @@ winmng::winList *winmng::m_winList = nullptr;
 
 winmng::winmng() : m_win(nullptr)
 {
-	m_hMap = ::CreateFileMapping((HANDLE)-1, nullptr, PAGE_READWRITE,
+	m_hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE,
 					0, sizeof(winList), L"__ckw_window_memfile");
 	bool firstCreate = false;
 	if (m_hMap != nullptr) {
