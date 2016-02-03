@@ -990,8 +990,10 @@ static BOOL create_font(const wchar_t* name, int height)
 {
 	trace(L"create_font\n");
 
+	HDC	hDC = GetDC(nullptr);
+
 	memset(&gFontLog, 0, sizeof(gFontLog));
-	gFontLog.lfHeight = -height;
+	gFontLog.lfHeight = -MulDiv(height, GetDeviceCaps(hDC, LOGPIXELSY), 96);
 	gFontLog.lfWidth = 0;
 	gFontLog.lfEscapement = 0;
 	gFontLog.lfOrientation = 0;
@@ -1010,7 +1012,6 @@ static BOOL create_font(const wchar_t* name, int height)
 	gFont = CreateFontIndirect(&gFontLog);
 
 	/* calc font size */
-	HDC	hDC = GetDC(nullptr);
 	HGDIOBJ	oldfont = SelectObject(hDC, gFont);
 	TEXTMETRIC met;
 	INT	width1[26], width2[26], width = 0;
