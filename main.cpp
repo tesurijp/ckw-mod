@@ -1330,21 +1330,6 @@ static void _terminate()
 /*----------*/
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nCmdShow)
 {
-#ifdef _DEBUG
-	char *a = new char[1];
-	*a = 0x22;
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF |
-		       _CRTDBG_LEAK_CHECK_DF |
-		       /*_CRTDBG_CHECK_ALWAYS_DF |*/
-		       _CRTDBG_DELAY_FREE_MEM_DF);
-	_CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_FILE );
-	_CrtSetReportMode( _CRT_WARN,   _CRTDBG_MODE_FILE );
-	_CrtSetReportMode( _CRT_ERROR,  _CRTDBG_MODE_FILE );
-	_CrtSetReportFile( _CRT_ASSERT, _CRTDBG_FILE_STDERR );
-	_CrtSetReportFile( _CRT_WARN,   _CRTDBG_FILE_STDERR );
-	_CrtSetReportFile( _CRT_ERROR,  _CRTDBG_FILE_STDERR );
-#endif
-
 	if(initialize()) {
 		MSG msg;
 		while(GetMessage(&msg, nullptr, 0,0)) {
