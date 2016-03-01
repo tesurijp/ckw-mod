@@ -1,3 +1,10 @@
+2016-02-03
+    * フォント描画のユニコード対応 (by rururu)
+    * コマンド引数のユニコード対応 (by rururu)
+    * 設定ファイルの文字コードをUTF-8に変更 (by rururu)
+    * 起動しているckw間を移動するショートカット(Ctrl-tab,Shift-Ctrl-tab)を追加 (by rururu)
+    * VS2015のソリューションファイルを作成 (by rururu)
+
 2013-03-10  NANRI
     Version 0.9.1
     * カーソルを点滅させるオプションを追加 (by DeaR)
