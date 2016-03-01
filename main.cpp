@@ -992,8 +992,12 @@ static BOOL create_font(const wchar_t* name, int height)
 
 	HDC	hDC = GetDC(nullptr);
 
+	int pixlsy = GetDeviceCaps(hDC, LOGPIXELSY);
+	gBorderSize = MulDiv(gBorderSize, pixlsy, 96);
+	gLineSpace = MulDiv(gLineSpace, pixlsy, 96);
+
 	memset(&gFontLog, 0, sizeof(gFontLog));
-	gFontLog.lfHeight = -MulDiv(height, GetDeviceCaps(hDC, LOGPIXELSY), 96);
+	gFontLog.lfHeight = -MulDiv(height, pixlsy, 96);
 	gFontLog.lfWidth = 0;
 	gFontLog.lfEscapement = 0;
 	gFontLog.lfOrientation = 0;
