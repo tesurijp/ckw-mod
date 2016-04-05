@@ -1060,7 +1060,7 @@ static void __hide_alloc_console()
 	 * hack StartupInfo.wShowWindow flag
 	 */
 
-#if defined(_MSC_VER) && defined(_WIN64)
+#if defined(_WIN64)
 	// for Win64
 	INT_PTR peb = *(INT_PTR*)((INT_PTR)NtCurrentTeb() + 0x60);
 	INT_PTR param = *(INT_PTR*) (peb + 0x20);
@@ -1070,12 +1070,6 @@ static void __hide_alloc_console()
 	// for Windows SDK v7.0
 	PPEB peb = *(PPEB*)((INT_PTR)NtCurrentTeb() + 0x30);
 	PRTL_USER_PROCESS_PARAMETERS param = peb->ProcessParameters;
-	DWORD* pflags = (DWORD*)((INT_PTR)param + 0x68);
-	WORD* pshow = (WORD*)((INT_PTR)param + 0x6C);
-#elif defined(_MSC_VER) || defined(_WIN64)
-	// not include winternl.h
-	INT_PTR peb = *(INT_PTR*)((INT_PTR)NtCurrentTeb() + 0x30);
-	INT_PTR param = *(INT_PTR*) (peb + 0x10);
 	DWORD* pflags = (DWORD*)((INT_PTR)param + 0x68);
 	WORD* pshow = (WORD*)((INT_PTR)param + 0x6C);
 #else

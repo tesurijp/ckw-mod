@@ -8,7 +8,8 @@ INCLUDE  =
 CXXFLAGS = -O2 $(INCLUDE) \
            -fno-rtti \
            -fno-exceptions \
-           -fomit-frame-pointer
+           -fomit-frame-pointer \
+           -std=c++11
 LDFLAGS = -mwindows -Wl,--enable-stdcall-fixup -static -s
 LDLIBS = -lshlwapi -limm32
 RFLAGS = -J rc -O coff
