@@ -1,4 +1,9 @@
+2016-xx-xx
+    Version 0.9.1-mod-r2
+    * 高DPI対応を強化 (by rururu)
+
 2016-02-03
+    Version 0.9.1-mod-r1
     * フォント描画のユニコード対応 (by rururu)
     * コマンド引数のユニコード対応 (by rururu)
     * 設定ファイルの文字コードをUTF-8に変更 (by rururu)
