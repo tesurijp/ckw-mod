@@ -1,4 +1,4 @@
-/*-----------------------------------------------------------------------------
+﻿/*-----------------------------------------------------------------------------
  * File: selection.cpp
  *-----------------------------------------------------------------------------
  * Copyright (c) 2004-2005  Kazuo Ishii <k-ishii@wb4.so-net.ne.jp>
@@ -93,16 +93,24 @@ static void __select_char_expand()
 	}
 	else if(gSelectRect.Left-1 >= gCSI->srWindow.Left) {
 		base  = SELECT_GetScrn(gSelectRect.Left, gSelectRect.Top);
-		if(base->Attributes & COMMON_LVB_TRAILING_BYTE)
+		if(base->Attributes & COMMON_LVB_TRAILING_BYTE) {
 			gSelectRect.Left--;
+		}
+		if(IS_LOW_SURROGATE(base->Char.UnicodeChar) == true) {
+			gSelectRect.Left--;
+		}
 	}
 
 	if(SCRN_InvalidArea(gSelectRect.Right, gSelectRect.Bottom)) {
 	}
 	else {
 		base  = SELECT_GetScrn(gSelectRect.Right, gSelectRect.Bottom);
-		if(base->Attributes & COMMON_LVB_TRAILING_BYTE)
+		if(base->Attributes & COMMON_LVB_TRAILING_BYTE) {
 			gSelectRect.Right++;
+		}
+		if(IS_LOW_SURROGATE(base->Char.UnicodeChar) == true) {
+			gSelectRect.Right++;
+		}
 	}
 }
 
