@@ -1,4 +1,4 @@
-/*-----------------------------------------------------------------------------
+ï»¿/*-----------------------------------------------------------------------------
  * File: main.cpp
  *-----------------------------------------------------------------------------
  * Copyright (c) 2005       Kazuo Ishii <k-ishii@wb4.so-net.ne.jp>
@@ -188,8 +188,8 @@ static UINT get_ucs(CHAR_INFO *ptr)
 
 /*----------*/
 /*
- CP932(TTF)   : ‘SŠp•¶š‚Í2‰ñoŒ»BAttributes‚ÉCOMMON_LVB_*‚ª—§‚Â
- CP65001      : ‘SŠp•¶š‚Í1‰ñ‚Ì‚İBCSI‚ÌÀ•W‚ÆCHAR_INFO‚ÌÀ•W‚Íˆê’v‚µ‚È‚¢
+ CP932(TTF)   : å…¨è§’æ–‡å­—ã¯2å›å‡ºç¾ã€‚Attributesã«COMMON_LVB_*ãŒç«‹ã¤
+ CP65001      : å…¨è§’æ–‡å­—ã¯1å›ã®ã¿ã€‚CSIã®åº§æ¨™ã¨CHAR_INFOã®åº§æ¨™ã¯ä¸€è‡´ã—ãªã„
  */
 static void __draw_screen(HDC hDC)
 {
@@ -219,10 +219,12 @@ static void __draw_screen(HDC hDC)
 				continue;
 			}
 			if(IS_LOW_SURROGATE(ptr->Char.UnicodeChar) == true) {
-				*work_text_ptr++ = ptr->Char.UnicodeChar;
-				*work_width_ptr++ = 0;
-				ptr++;
-				continue;
+				if (x != gCSI->srWindow.Left) {
+					*work_text_ptr++ = ptr->Char.UnicodeChar;
+					*work_width_ptr++ = 0;
+					ptr++;
+					continue;
+				}
 			}
 
 			color_fg = ptr->Attributes & 0xF;
@@ -335,7 +337,7 @@ static void __draw_screen(HDC hDC)
 				} else {
 					src[1] = (ptr+1)->Char.UnicodeChar;
 				}
-				*work_width = *work_width/2;		// ‹ê“÷‚Ìô
+				*work_width = *work_width/2;		// è‹¦è‚‰ã®ç­–
 				ExtTextOut(hDC, work_pntX, pntY, ETO_CLIPPED, nullptr,
 						src, 2, work_width);
 			} else {
@@ -669,7 +671,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 		onWindowPosChange(hWnd, (WINDOWPOS*)lp);
 		selectionClear(hWnd);
 
-		// WM_WINDOWPOSCHANGED‚ÅDefWindowProc‚ğŒÄ‚Î‚È‚¢‚ÆWM_SIZE‚ª‘—M‚³‚ê‚È‚¢
+		// WM_WINDOWPOSCHANGEDã§DefWindowProcã‚’å‘¼ã°ãªã„ã¨WM_SIZEãŒé€ä¿¡ã•ã‚Œãªã„
 		// http://msdn.microsoft.com/en-us/library/ms632652.aspx
 		return( DefWindowProc(hWnd, msg, wp, lp) );
 	case WM_LBUTTONDOWN:
@@ -918,7 +920,7 @@ static BOOL create_window(ckOpt& opt)
 
 	gMinimizeToTray = opt.isMinimizeToTray();
 
-	// ƒƒbƒZ[ƒW‚ÅÅ¬‰»‚µ‚È‚¢‚ÆƒVƒ‡[ƒgƒJƒbƒg‚ÌuÀs‚Ì‘å‚«‚³v‚È‚Ç‚ÆŠ±Â‚µ‚Ä‚¤‚Ü‚­“®‚©‚È‚¢
+	// ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã§æœ€å°åŒ–ã—ãªã„ã¨ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆã®ã€Œå®Ÿè¡Œæ™‚ã®å¤§ãã•ã€ãªã©ã¨å¹²æ¸‰ã—ã¦ã†ã¾ãå‹•ã‹ãªã„
 	if(opt.isIconic())
 		SendMessage(hWnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
 
@@ -1037,7 +1039,7 @@ static BOOL create_font(const wchar_t* name, int height)
 	return(TRUE);
 }
 
-// for Windows SDK v7.0 ƒGƒ‰[‚ª”­¶‚·‚éê‡‚ÍƒRƒƒ“ƒgƒAƒEƒgB
+// for Windows SDK v7.0 ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã™ã‚‹å ´åˆã¯ã‚³ãƒ¡ãƒ³ãƒˆã‚¢ã‚¦ãƒˆã€‚
 #ifdef _MSC_VER
 #include <winternl.h>
 #endif
@@ -1088,8 +1090,8 @@ static void __hide_alloc_console()
 
 	/* check */
 	if(si.dwFlags == backup_flags && si.wShowWindow == backup_show) {
-		// ƒVƒ‡[ƒgƒJƒbƒg‚©‚ç‚Ì‹N“®‚·‚é(STARTF_TITLEISLINKNAME‚ª—§‚Â)‚ÆA
-		// Console‘‹‚ğ‰B‚·‚Ì‚É¸”s‚·‚é‚Ì‚Åœ‹
+		// ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆã‹ã‚‰ã®èµ·å‹•ã™ã‚‹(STARTF_TITLEISLINKNAMEãŒç«‹ã¤)ã¨ã€
+		// Consoleçª“ã‚’éš ã™ã®ã«å¤±æ•—ã™ã‚‹ã®ã§é™¤å»
 		if (*pflags & STARTF_TITLEISLINKNAME) {
 			*pflags &= ~STARTF_TITLEISLINKNAME;
 		}
@@ -1163,8 +1165,8 @@ static BOOL create_console(ckOpt& opt)
 	if(!gConWnd || !gStdIn || !gStdOut || !gStdErr)
 		return(FALSE);
 
-	// Å‘å‰»•s‹ï‡‚Ì‰ğÁ‚Ìˆ×ƒtƒHƒ“ƒg‚ğÅ¬‰»
-	// ƒŒƒCƒAƒEƒg•ö‚ê/CP65001‚Å‚Ì“ú–{Œêo—Í‘Îô‚ÅMS GOTHIC‚ğw’è
+	// æœ€å¤§åŒ–ä¸å…·åˆã®è§£æ¶ˆã®ç‚ºãƒ•ã‚©ãƒ³ãƒˆã‚’æœ€å°åŒ–
+	// ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆå´©ã‚Œ/CP65001ã§ã®æ—¥æœ¬èªå‡ºåŠ›å¯¾ç­–ã§MS GOTHICã‚’æŒ‡å®š
 	CONSOLE_FONT_INFOEX info = {0};
 	info.cbSize       = sizeof(info);
 	info.FontWeight   = FW_NORMAL;
@@ -1335,7 +1337,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nCmd
 	return(0);
 }
 
-/* V‹KƒEƒCƒ“ƒhƒE‚Ìì¬ */
+/* æ–°è¦ã‚¦ã‚¤ãƒ³ãƒ‰ã‚¦ã®ä½œæˆ */
 void makeNewWindow()
 {
 	STARTUPINFO si;
@@ -1346,7 +1348,7 @@ void makeNewWindow()
 	ZeroMemory(&pi, sizeof(pi));
 	if(CreateProcess(nullptr, GetCommandLine(), nullptr, nullptr, FALSE, 0,
 					   nullptr, nullptr, &si, &pi)){
-		// g—p‚µ‚È‚¢‚Ì‚ÅC‚·‚®‚ÉƒNƒ[ƒY‚µ‚Ä‚æ‚¢
+		// ä½¿ç”¨ã—ãªã„ã®ã§ï¼Œã™ãã«ã‚¯ãƒ­ãƒ¼ã‚ºã—ã¦ã‚ˆã„
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}
