@@ -1,13 +1,16 @@
-2016-xx-xx
+2016-04-08
     Version 0.9.1-mod-r2
     * 高DPI対応を強化 (by rururu)
+    * 行を跨る際にサロゲートペア文字が分割された場合の不具合を修正 (by rururu)
+    * セレクションでのサロゲートペアの対応 (by rururu)
 
 2016-02-03
     Version 0.9.1-mod-r1
     * フォント描画のユニコード対応 (by rururu)
     * コマンド引数のユニコード対応 (by rururu)
     * 設定ファイルの文字コードをUTF-8に変更 (by rururu)
-    * 起動しているckw間を移動するショートカット(Ctrl-tab,Shift-Ctrl-tab)を追加 (by rururu)
+    * 設定ファイル名に.ckwを追加し.Xdefaultsを廃止 (by rururu)
+    * 起動している複数のckw間を移動するショートカット(Ctrl-tab,Shift-Ctrl-tab)を追加 (by rururu)
     * VS2015のソリューションファイルを作成 (by rururu)
 
 2013-03-10  NANRI
