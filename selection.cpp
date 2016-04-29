@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *---------------------------------------------------------------------------*/
 #include "ckw.h"
+#include "encoding.h"
 
 static int	gSelectMode = 0;
 static COORD	gSelectPos = { -1, -1 }; // pick point
@@ -28,9 +29,9 @@ static const wchar_t WORD_BREAK_CHARS[] = {
 	L' ',  L'\t', L'\"', L'&', L'\'', L'(', L')', L'*',
 	L',',  L';',  L'<',  L'=', L'>',  L'?', L'@', L'[',
 	L'\\', L']',  L'^',  L'`', L'{',  L'}', L'~',
-	0x3000,
-	0x3001,
-	0x3002,
+	0x3000,	// 全角スペース
+	0x3001,	// 読点
+	0x3002,	// 句点
 	/**/
 	0,
 };
@@ -43,21 +44,102 @@ static const wchar_t WORD_BREAK_CHARS[] = {
 	 x < gCSI->srWindow.Left   ||	\
 	 x > gCSI->srWindow.Right)
 
-#define SELECT_GetScrn(x,y) \
-	(gScreen + CSI_WndCols(gCSI) * (y - gCSI->srWindow.Top) + x)
+/**
+ * 指定表示座標のCHAR_INFOを取得
+ * @param x [in] 表示x座標
+ * @param y [in] 表示y座標
+ * @param is_half [out] 全角の途中か否か
+ * @return CHAR_INF
+ *
+ * @todo chcp65001の時の全角後半の時の座標補正
+ */
+static inline CHAR_INFO* SELECT_GetScrn(int x, int y, int &is_half) {
+
+	// Y座標
+	CHAR_INFO* ptr = gScreen + CSI_WndCols(gCSI) * (y - gCSI->srWindow.Top);
+
+	// Xは実際チェックしないと確定しない
+	is_half = 0;
+	for(int pos=gCSI->srWindow.Left ; pos < x ; ptr++) {
+		if(ptr->Attributes & COMMON_LVB_TRAILING_BYTE ||
+		   ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+			pos++;
+			continue;
+		}
+		if(is_dblchar_cjk(ptr->Char.UnicodeChar) == true) {
+			pos+=2;
+			if(pos > x) {
+				is_half = 1;
+			}
+		} else {
+			pos++;
+		}
+	}
+
+	return ptr;
+}
+
+/**
+ * 表示座標から論理座標へ
+ * @param x [in] 表示x座標
+ * @param y [in] 表示y座標
+ * @return 論理x座標(0 origin)
+ */
+static inline int charpos_to_strpos(int x, int y) {
+	// Y座標
+	CHAR_INFO* ptr = gScreen + CSI_WndCols(gCSI) * (y - gCSI->srWindow.Top);
+
+	// Xは実際チェックしないと確定しない
+	int pos_x = 0;
+	for(int pos=gCSI->srWindow.Left; pos < x ; ptr++, pos_x++) {
+		if(ptr->Attributes & COMMON_LVB_TRAILING_BYTE ||
+			ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+			pos++;
+			continue;
+		}
+		if(is_dblchar_cjk(ptr->Char.UnicodeChar) == true) {
+			pos+=2;
+		} else {
+			pos++;
+		}
+	}
+
+  {
+    wchar_t buf[256];
+    wsprintf(buf, L"pos : %d\n", pos_x);
+    OutputDebugString(buf);
+  }
+	return pos_x;
+}
 
 static void __select_word_expand_left()
 {
 	if(SCRN_InvalidArea(gSelectRect.Left, gSelectRect.Top))
 		return;
-	CHAR_INFO* base  = SELECT_GetScrn(gSelectRect.Left, gSelectRect.Top);
+	int is_half;
+	CHAR_INFO* base = SELECT_GetScrn(gSelectRect.Left, gSelectRect.Top, is_half);
 	CHAR_INFO* ptr = base;
 	int c = gSelectRect.Left;
+	if (is_half) {
+		ptr-=1;
+	}
+	else if (!(ptr->Attributes & COMMON_LVB_TRAILING_BYTE) &&
+		!(ptr->Attributes & COMMON_LVB_LEADING_BYTE) &&
+		is_dblchar_cjk(ptr->Char.UnicodeChar)) {
+		c++;
+	}
 
 	for( ; c >= gCSI->srWindow.Left ; c--, ptr--) {
 		if(wcschr(WORD_BREAK_CHARS, ptr->Char.UnicodeChar)) {
 			c++;
 			break;
+		}
+		if (ptr->Attributes & COMMON_LVB_TRAILING_BYTE ||
+			ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+			continue;
+		}
+		if (is_dblchar_cjk(ptr->Char.UnicodeChar) == true) {
+			c--;
 		}
 	}
 	if(c < 0)
@@ -71,13 +153,24 @@ static void __select_word_expand_right()
 {
 	if(SCRN_InvalidArea(gSelectRect.Right, gSelectRect.Bottom))
 		return;
-	CHAR_INFO* base  = SELECT_GetScrn(gSelectRect.Right, gSelectRect.Bottom);
+	int is_half;
+	CHAR_INFO* base = SELECT_GetScrn(gSelectRect.Right, gSelectRect.Bottom, is_half);
 	CHAR_INFO* ptr = base;
 	int c = gSelectRect.Right;
+	if (is_half) {
+		c++;
+	}
 
 	for( ; c <= gCSI->srWindow.Right ; c++, ptr++) {
 		if(wcschr(WORD_BREAK_CHARS, ptr->Char.UnicodeChar)) {
 			break;
+		}
+		if (ptr->Attributes & COMMON_LVB_TRAILING_BYTE ||
+			ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
+			continue;
+		}
+		if (is_dblchar_cjk(ptr->Char.UnicodeChar) == true) {
+			c++;
 		}
 	}
 
@@ -87,29 +180,45 @@ static void __select_word_expand_right()
 
 static void __select_char_expand()
 {
+	int is_half;
 	CHAR_INFO* base;
 
 	if(SCRN_InvalidArea(gSelectRect.Left, gSelectRect.Top)) {
 	}
-	else if(gSelectRect.Left-1 >= gCSI->srWindow.Left) {
-		base  = SELECT_GetScrn(gSelectRect.Left, gSelectRect.Top);
+	else if (gSelectRect.Left - 1 >= gCSI->srWindow.Left) {
+		base = SELECT_GetScrn(gSelectRect.Left, gSelectRect.Top, is_half);
+		// マルチバイトの前半
 		if(base->Attributes & COMMON_LVB_TRAILING_BYTE) {
 			gSelectRect.Left--;
 		}
-		if(IS_LOW_SURROGATE(base->Char.UnicodeChar) == true) {
-			gSelectRect.Left--;
+		else if(!(base->Attributes & COMMON_LVB_LEADING_BYTE)) {
+			// サロゲートの前半
+			if (IS_LOW_SURROGATE(base->Char.UnicodeChar) == true) {
+				gSelectRect.Left--;
+			}
+			// 全角の後半
+			if (is_half) {
+				gSelectRect.Left--;
+			}
 		}
 	}
 
 	if(SCRN_InvalidArea(gSelectRect.Right, gSelectRect.Bottom)) {
 	}
 	else {
-		base  = SELECT_GetScrn(gSelectRect.Right, gSelectRect.Bottom);
+		base  = SELECT_GetScrn(gSelectRect.Right, gSelectRect.Bottom, is_half);
+		// マルチバイトの前半
 		if(base->Attributes & COMMON_LVB_TRAILING_BYTE) {
 			gSelectRect.Right++;
-		}
-		if(IS_LOW_SURROGATE(base->Char.UnicodeChar) == true) {
-			gSelectRect.Right++;
+		} else if (!(base->Attributes & COMMON_LVB_LEADING_BYTE)) {
+			// サロゲートの前半
+			if(IS_LOW_SURROGATE(base->Char.UnicodeChar) == true) {
+				gSelectRect.Right++;
+			}
+			// 全角の後半
+			if (is_half) {
+				gSelectRect.Right++;
+			}
 		}
 	}
 }
@@ -117,18 +226,22 @@ static void __select_char_expand()
 inline void __select_expand()
 {
 	if(gSelectMode == 0) {
+		// 選択範囲
 		__select_char_expand();
 	}
 	else if(gSelectMode == 1) {
+		// ワード抽出(dboule click)
 		__select_word_expand_left();
 		__select_word_expand_right();
 	}
 	else if(gSelectMode == 2) {
+		// 1行選択(triple click)
 		gSelectRect.Left = gCSI->srWindow.Left;
 		gSelectRect.Right = gCSI->srWindow.Right+1;
 	}
 }
 
+// 実dot座標 to コンソール仮想座標
 static void window_to_charpos(int& x, int& y)
 {
 	x -= gBorderSize;
@@ -199,14 +312,20 @@ wchar_t * selectionGetString()
 	*wp = 0;
 
 	if(gSelectRect.Top == gSelectRect.Bottom) {
+		// 1行
 		sr.Top = sr.Bottom = gSelectRect.Top;
 		ReadConsoleOutput(gStdOut, work, size, pos, &sr);
-		copyChar(wp, work, gSelectRect.Left, gSelectRect.Right-1, false);
+		SHORT Left  = charpos_to_strpos(gSelectRect.Left, gSelectRect.Top);
+		SHORT Right = charpos_to_strpos(gSelectRect.Right, gSelectRect.Top);
+		copyChar(wp, work, Left, Right-1, false);
 	}
 	else {
+		// 複数行
 		sr.Top = sr.Bottom = gSelectRect.Top;
 		ReadConsoleOutput(gStdOut, work, size, pos, &sr);
-		copyChar(wp, work, gSelectRect.Left, gCSI->srWindow.Right);
+		SHORT Left  = charpos_to_strpos(gSelectRect.Left, gSelectRect.Top);
+		SHORT Right = charpos_to_strpos(gCSI->srWindow.Right, gSelectRect.Top);
+		copyChar(wp, work, Left, Right);
 		for(y = gSelectRect.Top+1 ; y <= gSelectRect.Bottom-1 ; y++) {
 			sr.Top = sr.Bottom = y;
 			ReadConsoleOutput(gStdOut, work, size, pos, &sr);
@@ -214,7 +333,9 @@ wchar_t * selectionGetString()
 		}
 		sr.Top = sr.Bottom = gSelectRect.Bottom;
 		ReadConsoleOutput(gStdOut, work, size, pos, &sr);
-		copyChar(wp, work, gCSI->srWindow.Left, gSelectRect.Right-1, false);
+		Left  = charpos_to_strpos(gCSI->srWindow.Left, gSelectRect.Top);
+		Right = charpos_to_strpos(gSelectRect.Right, gSelectRect.Top);
+		copyChar(wp, work, Left, Right-1, false);
 	}
 
 	delete [] work;
