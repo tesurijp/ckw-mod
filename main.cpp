@@ -1031,14 +1031,7 @@ static BOOL create_font(const wchar_t* name, int height)
 	return(TRUE);
 }
 
-// for Windows SDK v7.0 エラーが発生する場合はコメントアウト。
-#ifdef _MSC_VER
 #include <winternl.h>
-#endif
-
-#if defined(__GNUC__) && !defined(_WIN64) // for mingw32
-#include <ddk/ntapi.h>
-#endif
 
 #ifndef STARTF_TITLEISLINKNAME
 #define STARTF_TITLEISLINKNAME 0x00000800
@@ -1055,23 +1048,15 @@ static void __hide_alloc_console()
 	 */
 
 #if defined(_WIN64)
-	// for Win64
 	INT_PTR peb = *(INT_PTR*)((INT_PTR)NtCurrentTeb() + 0x60);
 	INT_PTR param = *(INT_PTR*) (peb + 0x20);
 	DWORD* pflags = (DWORD*) (param + 0xa4);
 	WORD* pshow = (WORD*) (param + 0xa8);
-#elif defined(_MSC_VER) && defined(_WINTERNL_)
-	// for Windows SDK v7.0
+#else
 	PPEB peb = *(PPEB*)((INT_PTR)NtCurrentTeb() + 0x30);
 	PRTL_USER_PROCESS_PARAMETERS param = peb->ProcessParameters;
 	DWORD* pflags = (DWORD*)((INT_PTR)param + 0x68);
 	WORD* pshow = (WORD*)((INT_PTR)param + 0x6C);
-#else
-	// for gcc
-	INT_PTR peb = *(INT_PTR*)((INT_PTR)NtCurrentTeb() + 0x30);
-	PRTL_USER_PROCESS_PARAMETERS param = *(PRTL_USER_PROCESS_PARAMETERS*)(peb + 0x10);
-	DWORD* pflags = (DWORD*)&(param->dwFlags);
-	WORD* pshow = (WORD*)&(param->wShowWindow);
 #endif
 
 	DWORD	backup_flags = *pflags;
