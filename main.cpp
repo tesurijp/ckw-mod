@@ -174,12 +174,8 @@ static void __draw_selection(HDC hDC)
 static UINT get_ucs(CHAR_INFO *ptr)
 {
 	UINT ucs;
-	if(IS_HIGH_SURROGATE(ptr->Char.UnicodeChar) == true) {
-		if(ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
-			ucs = surrogate_to_ucs(ptr->Char.UnicodeChar, (ptr+2)->Char.UnicodeChar);
-		} else {
-			ucs = surrogate_to_ucs(ptr->Char.UnicodeChar, (ptr+1)->Char.UnicodeChar);
-		}
+	if(IS_SURROGATE_PAIR(ptr->Char.UnicodeChar, (ptr+1)->Char.UnicodeChar) == true) {
+		ucs = surrogate_to_ucs(ptr->Char.UnicodeChar, (ptr+1)->Char.UnicodeChar);
 	} else {
 		ucs = static_cast<UINT>(ptr->Char.UnicodeChar);
 	}
@@ -329,14 +325,10 @@ static void __draw_screen(HDC hDC)
 			SetTextColor(hDC, gColorTable[ color_fg ]);
 			SetBkColor(  hDC, gColorTable[ color_bg ]);
 			SetBkMode(hDC, OPAQUE);
-			if (IS_HIGH_SURROGATE(ptr->Char.UnicodeChar)) {
+			if(IS_SURROGATE_PAIR(ptr->Char.UnicodeChar, (ptr+1)->Char.UnicodeChar) == true) {
 				wchar_t src[2];
 				src[0] = ptr->Char.UnicodeChar;
-				if (ptr->Attributes & COMMON_LVB_LEADING_BYTE) {
-					src[1] = (ptr+2)->Char.UnicodeChar;
-				} else {
-					src[1] = (ptr+1)->Char.UnicodeChar;
-				}
+				src[1] = (ptr+1)->Char.UnicodeChar;
 				*work_width = *work_width/2;		// 苦肉の策
 				ExtTextOut(hDC, work_pntX, pntY, ETO_CLIPPED, nullptr,
 						src, 2, work_width);
