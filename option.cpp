@@ -977,6 +977,7 @@ ckOpt::ckOpt()
 	m_config_file[0] = L'\0';
 	m_bgBmpPos = 0;
 	m_isCurBlink = false;
+	m_codePage = GetConsoleCP();
 }
 
 ckOpt::~ckOpt()
@@ -1043,6 +1044,7 @@ int	ckOpt::setOption(const wchar_t *name, const wchar_t *value, bool rsrc)
 	CHK_MISC(L"config",		L"c",		setFile(value);loadXdefaults() );
 	CHK_MISC(L"backgroundBitmapPos",	L"bitmappos",	m_bgBmpPos = _wtoi(value));
 	CHK_BOOL(L"cursorBlink",		L"crb",		m_isCurBlink);
+	CHK_MISC(L"codePage",	L"cp",		m_codePage = _wtoi(value));
 
 
 	unsigned int i;
@@ -1099,6 +1101,7 @@ static void usage(bool isLong)
 	L"config",		L"c",		L"string",	L"configration file",
 	L"backgroundBitmapPos",	L"bitmappos",	L"number",	L"background bmp position. ( 0:tile 1:left-top 2:right-top 3:left-bottom 4:right-bottom 5:stretch-h 6:stretch-v 7:stretch-fill )",
 	L"cursorBlink",		L"crb",		L"boolean",	L"cursor blink",
+	L"codePage",		L"cp",		L"number",	L"code page",
 	};
 	unsigned int	i;
 

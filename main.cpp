@@ -1168,6 +1168,13 @@ static BOOL create_console(ckOpt& opt)
 	size.X = sr.Left;
 	size.Y = sr.Top;
 	SetConsoleCursorPosition(gStdOut, size);
+
+	UINT codepage = opt.getCodePage();
+	if (IsValidCodePage(codepage) && GetConsoleCP() != codepage) {
+		SetConsoleCP(codepage);
+		SetConsoleOutputCP(codepage);
+	}
+
 	return(TRUE);
 }
 

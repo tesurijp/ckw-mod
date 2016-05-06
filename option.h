@@ -42,6 +42,7 @@ public:
 	bool		isTopMost()		{ return(m_isTopMost); }
 	int		getBgBmpPos()		{ return(m_bgBmpPos); }
 	bool		isCurBlink()		{ return(m_isCurBlink); }
+	int		getCodePage()		{ return(m_codePage); }
 
 	const wchar_t*	getCmd()
 	{
@@ -109,6 +110,7 @@ private:
 	wchar_t	m_config_file[MAX_PATH+1];
 	int		m_bgBmpPos;
 	bool		m_isCurBlink;
+	int		m_codePage;
 };
 
 #endif /* __CK_OPT_H__ */
