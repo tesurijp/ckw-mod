@@ -51,7 +51,6 @@ static const wchar_t WORD_BREAK_CHARS[] = {
  * @param is_half [out] 全角の途中か否か
  * @return CHAR_INF
  *
- * @todo chcp65001の時の全角後半の時の座標補正
  */
 static inline CHAR_INFO* SELECT_GetScrn(int x, int y, int &is_half) {
 
@@ -103,12 +102,6 @@ static inline int charpos_to_strpos(int x, int y) {
 			pos++;
 		}
 	}
-
-  {
-    wchar_t buf[256];
-    wsprintf(buf, L"pos : %d\n", pos_x);
-    OutputDebugString(buf);
-  }
 	return pos_x;
 }
 
