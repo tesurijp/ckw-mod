@@ -1142,6 +1142,12 @@ static BOOL create_console(ckOpt& opt)
 	if(!gConWnd || !gStdIn || !gStdOut || !gStdErr)
 		return(FALSE);
 
+	UINT codepage = opt.getCodePage();
+	if (IsValidCodePage(codepage) && GetConsoleCP() != codepage) {
+		SetConsoleCP(codepage);
+		SetConsoleOutputCP(codepage);
+	}
+
 	// 最大化不具合の解消の為フォントを最小化
 	// レイアウト崩れ/CP65001での日本語出力対策でMS GOTHICを指定
 	CONSOLE_FONT_INFOEX info = {0};
@@ -1168,12 +1174,6 @@ static BOOL create_console(ckOpt& opt)
 	size.X = sr.Left;
 	size.Y = sr.Top;
 	SetConsoleCursorPosition(gStdOut, size);
-
-	UINT codepage = opt.getCodePage();
-	if (IsValidCodePage(codepage) && GetConsoleCP() != codepage) {
-		SetConsoleCP(codepage);
-		SetConsoleOutputCP(codepage);
-	}
 
 	return(TRUE);
 }
