@@ -48,7 +48,7 @@ HBITMAP gBgBmp = nullptr;	/* background image */
 HBRUSH	gBgBrush = nullptr;/* background brush */
 DWORD	gBorderSize = 0;/* internal border */
 DWORD	gLineSpace = 0;	/* line space */
-BOOL	gVScrollHide = FALSE;
+bool	gVScrollHide = false;
 
 BOOL	gImeOn = FALSE; /* IME-status */
 
@@ -841,7 +841,7 @@ static BOOL create_window(ckOpt& opt)
 		exstyle |= WS_EX_TOPMOST;
 
 	if(opt.isScrollHide() || opt.getSaveLines() < 1)
-		gVScrollHide = TRUE;
+		gVScrollHide = true;
 	else
 		style |= WS_VSCROLL;
 
