@@ -794,6 +794,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 		if(gMinimizeToTray && wp == SIZE_MINIMIZED) {
 			desktopToTray(hWnd);
 		}
+		{
+			CONSOLE_SCREEN_BUFFER_INFO csi;
+			GetConsoleScreenBufferInfo(gStdOut, &csi);
+			COORD size = { 0 };
+			size.X = (SHORT)(((lp & 0xffff) - (gBorderSize * 2)) / gFontW);
+			size.Y = csi.dwSize.Y;
+			SetConsoleScreenBufferSize(gStdOut, size);
+		}
 		return(0);
 	default:
 		return( DefWindowProc(hWnd, msg, wp, lp) );
