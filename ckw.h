@@ -36,7 +36,7 @@ extern CHAR_INFO*	gScreen;
 void	makeNewWindow();
 
 /* selection.cpp */
-BOOL	selectionGetArea(SMALL_RECT& sr);
+bool	selectionGetArea(SMALL_RECT& sr);
 void	selectionClear(HWND hWnd);
 void	onLBtnDown(HWND hWnd, int x, int y);
 void	onLBtnUp(HWND hWnd, int x, int y);

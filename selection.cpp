@@ -259,12 +259,12 @@ static inline bool __select_invalid()
 }
 
 /*----------*/
-BOOL	selectionGetArea(SMALL_RECT& sr)
+bool	selectionGetArea(SMALL_RECT& sr)
 {
 	if( __select_invalid() )
-		return(FALSE);
+		return(false);
 	sr = gSelectRect;
-	return(TRUE);
+	return(true);
 }
 
 /*----------*/
