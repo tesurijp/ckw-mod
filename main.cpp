@@ -22,6 +22,7 @@
 #include "rsrc.h"
 #include "encoding.h"
 #include "winmng.h"
+#include <string>
 #include <imm.h>
 
 /*****************************************************************************/
@@ -39,6 +40,7 @@ LOGFONT	gFontLog;	/* font IME */
 HFONT	gFont;		/* font */
 DWORD	gFontW;		/* char width */
 DWORD	gFontH;		/* char height */
+int		gFontSize;
 
 DWORD	gWinW;		/* window columns */
 DWORD	gWinH;		/* window rows */
@@ -82,6 +84,7 @@ enum {
 };
 COLORREF gColorTable[ kColorMax ];
 
+BOOL create_font(const wchar_t* name, int height);
 
 /*****************************************************************************/
 
@@ -393,6 +396,14 @@ void	onPaint(HWND hWnd)
 	DeleteDC(hMemDC);
 
 	EndPaint(hWnd, &ps);
+}
+
+static int get_dpi()
+{
+	HDC	hDC = GetDC(nullptr);
+	int pixlsy = GetDeviceCaps(hDC, LOGPIXELSY);
+	ReleaseDC(nullptr, hDC);
+	return pixlsy;
 }
 
 /*----------*/
@@ -715,9 +726,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 			return( DefWindowProc(hWnd, msg, wp, lp) );
 		break;
 	case WM_VSCROLL:
-	case WM_MOUSEWHEEL:
 		/* throw console window */
 		PostMessage(gConWnd, msg, wp, lp);
+		break;
+
+	case WM_MOUSEWHEEL:
+		if (GET_KEYSTATE_WPARAM(wp) & MK_CONTROL) {
+			short delta = GET_WHEEL_DELTA_WPARAM(wp);
+			if (delta != 0) {
+				DeleteObject(gFont);
+				gFontSize += (delta > 0) ? 1 : -1;
+				if (gFontSize <= 2) gFontSize = 2;
+				std::wstring facename = gFontLog.lfFaceName;
+				create_font(facename.c_str(), gFontSize);
+				DWORD w = (gWinW * gFontW) + (gBorderSize * 2) + (gFrame.right - gFrame.left);
+				DWORD h = (gWinH * gFontH) + (gBorderSize * 2) + (gFrame.bottom - gFrame.top);
+				SetWindowPos(hWnd, nullptr, 0,0,w,h, SWP_NOMOVE|SWP_NOZORDER);
+				InvalidateRect(hWnd, nullptr, TRUE);
+			}
+		} else {
+			/* throw console window */
+			PostMessage(gConWnd, msg, wp, lp);
+		}
 		break;
 
 	case WM_IME_CHAR:
@@ -992,12 +1022,7 @@ static BOOL create_font(const wchar_t* name, int height)
 {
 	trace(L"create_font\n");
 
-	HDC	hDC = GetDC(nullptr);
-
-	int pixlsy = GetDeviceCaps(hDC, LOGPIXELSY);
-	gBorderSize = MulDiv(gBorderSize, pixlsy, 96);
-	gLineSpace = MulDiv(gLineSpace, pixlsy, 96);
-
+	int pixlsy = get_dpi();
 	memset(&gFontLog, 0, sizeof(gFontLog));
 	gFontLog.lfHeight = -MulDiv(height, pixlsy, 96);
 	gFontLog.lfWidth = 0;
@@ -1018,6 +1043,7 @@ static BOOL create_font(const wchar_t* name, int height)
 	gFont = CreateFontIndirect(&gFontLog);
 
 	/* calc font size */
+	HDC	hDC = GetDC(nullptr);
 	HGDIOBJ	oldfont = SelectObject(hDC, gFont);
 	TEXTMETRIC met;
 	INT	width1[26], width2[26], width = 0;
@@ -1183,6 +1209,10 @@ static BOOL create_console(ckOpt& opt)
 	size.Y = sr.Top;
 	SetConsoleCursorPosition(gStdOut, size);
 
+	int pixlsy = get_dpi();
+	gBorderSize = MulDiv(gBorderSize, pixlsy, 96);
+	gLineSpace = MulDiv(gLineSpace, pixlsy, 96);
+
 	return(TRUE);
 }
 
@@ -1260,6 +1290,7 @@ static BOOL initialize()
 		trace(L"create_font failed\n");
 		return(FALSE);
 	}
+	gFontSize = opt.getFontSize();
 	if (! set_current_directory(opt.getCurDir())) {
 		trace(L"set_current_directory failed\n");
 	}
