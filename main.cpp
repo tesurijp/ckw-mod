@@ -84,7 +84,7 @@ enum {
 };
 COLORREF gColorTable[ kColorMax ];
 
-BOOL create_font(const wchar_t* name, int height);
+static BOOL create_font(const wchar_t* name, int height);
 
 /*****************************************************************************/
 
