@@ -321,7 +321,7 @@ static void __draw_screen(HDC hDC)
 			HPEN hPen = CreatePen(PS_SOLID, 1, gColorTable[ color_bg ]);
 			HPEN hOldPen = (HPEN)SelectObject(hDC, hPen);
 			HBRUSH hOldBrush = (HBRUSH)SelectObject(hDC, GetStockObject(NULL_BRUSH));
-			Rectangle(hDC, pntX, pntY, pntX+(*work_width), pntY+gFontH);
+			Rectangle(hDC, work_pntX, pntY, work_pntX+(*work_width), pntY+gFontH);
 			SelectObject(hDC, hOldPen); DeleteObject(hPen);
 			SelectObject(hDC, hOldBrush);
 		}else if(!gCurHide){
