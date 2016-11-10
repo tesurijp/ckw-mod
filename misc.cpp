@@ -529,7 +529,7 @@ void	sysicon_destroy(HWND hWnd)
 void	updateTrayTip(HWND hWnd, const wchar_t* title)
 {
 	size_t tip_size = sizeof(sysicon_notif.szTip) / sizeof(sysicon_notif.szTip[0]);
-	wcsncpy_s(sysicon_notif.szTip, tip_size, title, tip_size);
+	wcsncpy_s(sysicon_notif.szTip, tip_size, title, tip_size-1);
 	if(tip_size > 0)
 		sysicon_notif.szTip[tip_size - 1] = L'\0';
 
