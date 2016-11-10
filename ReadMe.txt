@@ -6,13 +6,16 @@
   コマンドプロンプトを隠しておいて、画面表示や キー操作など
   ユーザーインターフェース部分だけを置き換えています。
 
-  WindowsXP/Vista/7/8.1/10で動作する Win32アプリケーションです。
+  Vista/7/8.1/10で動作する Win32アプリケーションです。
 
   オリジナルの配布元は以下になります。（リンク切れ）
   http://www.geocities.jp/cygwin_ck/
 
   改変版はGithubにて公開しています。
   https://github.com/ckw-mod/ckw-mod
+
+  Unicode改変版はGithubにて公開しています。
+  https://github.com/rururutan/ckw-mod/
 
   このソフトウェアのライセンスは GNU General Public License v2です。
 
