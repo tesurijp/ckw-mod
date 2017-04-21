@@ -252,6 +252,7 @@ static void __draw_screen(HDC hDC)
 				*work_text_ptr++ = ptr->Char.UnicodeChar;
 				*work_width_ptr++ = gFontW * 2;
 				pntX += gFontW;
+				x++; // Adhoc For ForceV2 Terminal
 			}
 			else {
 				*work_text_ptr++ = ptr->Char.UnicodeChar;
