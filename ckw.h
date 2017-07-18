@@ -1,5 +1,6 @@
-#ifndef __CKW_H__
-#define __CKW_H__ 1
+#pragma once
+#ifndef CKW_H
+#define CKW_H 1
 
 #define _WIN32_WINNT _WIN32_WINNT_WINXP
 #define _WIN32_IE 0x0600
@@ -56,4 +57,4 @@ void	updateTrayTip(HWND hWnd, const wchar_t* title);
 void	desktopToTray(HWND hWnd);
 void	trayToDesktop(HWND hWnd);
 
-#endif /* __CKW_H__ */
+#endif /* CKW_H */
