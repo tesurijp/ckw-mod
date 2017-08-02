@@ -7,6 +7,7 @@
 #define _UNICODE 1
 #define  UNICODE 1
 #include <windows.h>
+#include <windowsx.h>
 #include <wchar.h>
 
 #ifndef _MSC_VER
