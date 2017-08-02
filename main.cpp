@@ -200,7 +200,7 @@ static void __draw_screen(HDC hDC)
 	int	 work_color_fg = -1;
 	int	 work_color_bg = -1;
 	wchar_t* work_text = new wchar_t[ CSI_WndCols(gCSI) * 2 ];
-	wchar_t* work_text_ptr;
+	wchar_t* work_text_ptr = nullptr;
 	INT*	 work_width = new INT[ CSI_WndCols(gCSI) * 2 ];
 	INT*	 work_width_ptr;
 	int	 work_pntX;
@@ -635,6 +635,20 @@ void	onTimer(HWND hWnd)
 	}
 }
 
+// ckw to console
+LPARAM convert_position(LPARAM lp)
+{
+	int x = GET_X_LPARAM(lp);
+	int y = GET_Y_LPARAM(lp);
+	x -= gBorderSize;
+	y -= gBorderSize;
+	if (x<0) x=0;
+	if (y<0) x=0;
+	x = x * 3 / gFontW;
+	y = y * 6 / gFontH;
+	return MAKELPARAM(x,y);
+}
+
 /*****************************************************************************/
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -679,31 +693,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 		return( DefWindowProc(hWnd, msg, wp, lp) );
 	case WM_LBUTTONDOWN:
 		onLBtnDown(hWnd, (short)LOWORD(lp), (short)HIWORD(lp));
+		PostMessage(gConWnd, msg, wp, convert_position(lp));
 		break;
 	case WM_LBUTTONUP:
 		onLBtnUp(hWnd, (short)LOWORD(lp), (short)HIWORD(lp));
+		PostMessage(gConWnd, msg, wp, convert_position(lp));
 		break;
 	case WM_MOUSEMOVE:
 		onMouseMove(hWnd, (short)LOWORD(lp),(short)HIWORD(lp));
 		// scroll when mouse is outside (craftware)
 		{
-			short x = (short)LOWORD(lp);
-			short y = (short)HIWORD(lp);
+			int x = GET_X_LPARAM(lp);
+			int y = GET_Y_LPARAM(lp);
 
 			RECT rc;
 			GetClientRect(hWnd, &rc);
 
 			if( y<0 ) {
-				PostMessage(gConWnd, WM_MOUSEWHEEL, WHEEL_DELTA<<16, y<<16|x );
+				PostMessage(gConWnd, WM_MOUSEWHEEL, WHEEL_DELTA<<16, MAKELPARAM(x,y));
 			}
 			else if(y>=rc.bottom) {
-				PostMessage(gConWnd, WM_MOUSEWHEEL, -WHEEL_DELTA<<16, y<<16|x );
+				PostMessage(gConWnd, WM_MOUSEWHEEL, -WHEEL_DELTA<<16, MAKELPARAM(x,y));
 			}
 		}
+		PostMessage(gConWnd, msg, wp, convert_position(lp));
 		break;
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
 		onPasteFromClipboard(hWnd);
+		PostMessage(gConWnd, msg, wp, convert_position(lp));
 		break;
 	case WM_DROPFILES:
 		onDropFile((HDROP)wp);
@@ -746,7 +764,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 			}
 		} else {
 			/* throw console window */
-			PostMessage(gConWnd, msg, wp, lp);
+			PostMessage(gConWnd, msg, wp, convert_position(lp));
 		}
 		break;
 
@@ -815,10 +833,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 		gFocus = TRUE;
 		if(gCurBlink) gCurBlinkNext = GetTickCount() + (gCurHide? 0: GetCaretBlinkTime());
 		InvalidateRect(hWnd, nullptr, TRUE);
+		PostMessage(gConWnd, msg, wp, lp);
 		break;
 	case WM_KILLFOCUS:
 		gFocus = FALSE;
 		InvalidateRect(hWnd, nullptr, TRUE);
+		PostMessage(gConWnd, msg, wp, lp);
 		break;
 	case WM_SIZE:
 		if(gMinimizeToTray && wp == SIZE_MINIMIZED) {
@@ -1187,6 +1207,7 @@ static BOOL create_console(ckOpt& opt)
 	CONSOLE_FONT_INFOEX info = {0};
 	info.cbSize       = sizeof(info);
 	info.FontWeight   = FW_NORMAL;
+	info.dwFontSize.X = 3;
 	info.dwFontSize.Y = 6;
 	lstrcpyn(info.FaceName, L"MS GOTHIC", LF_FACESIZE);
 	if (SetCurrentConsoleFontEx(gStdOut, FALSE, &info) == FALSE) {
@@ -1347,7 +1368,7 @@ static void _terminate()
 #endif
 
 /*----------*/
-int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nCmdShow)
+int APIENTRY WinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrev, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
 	if(initialize()) {
 		MSG msg;
