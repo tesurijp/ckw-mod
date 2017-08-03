@@ -41,6 +41,7 @@ HFONT	gFont;		/* font */
 DWORD	gFontW;		/* char width */
 DWORD	gFontH;		/* char height */
 int		gFontSize;
+UINT	gCodePage;
 
 DWORD	gWinW;		/* window columns */
 DWORD	gWinH;		/* window rows */
@@ -307,7 +308,7 @@ static void __draw_screen(HDC hDC)
 				work_pntX += gFontW;
 			}
 			ptr++;
-		}	
+		}
 
 		ptr = gScreen + CSI_WndCols(gCSI) * pntY + pntX;
 		pntX *= gFontW;
@@ -528,6 +529,19 @@ void	onTimer(HWND hWnd)
 		return;
 	}
 
+	// check codepage
+	UINT codepage = GetConsoleCP();
+	if (gCodePage != codepage) {
+		gCodePage = codepage;
+		CONSOLE_FONT_INFOEX info = {0};
+		info.cbSize       = sizeof(info);
+		info.FontWeight   = FW_NORMAL;
+		info.dwFontSize.X = 3;
+		info.dwFontSize.Y = 6;
+		lstrcpyn(info.FaceName, L"MS GOTHIC", LF_FACESIZE);
+		SetCurrentConsoleFontEx(gStdOut, FALSE, &info);
+	}
+
 	/* refresh handle */
 	if(gStdOut) CloseHandle(gStdOut);
 	gStdOut = CreateFile(L"CONOUT$", GENERIC_READ|GENERIC_WRITE,
@@ -636,7 +650,7 @@ void	onTimer(HWND hWnd)
 }
 
 // ckw to console
-LPARAM convert_position(LPARAM lp)
+static LPARAM convert_position(LPARAM lp)
 {
 	int x = GET_X_LPARAM(lp);
 	int y = GET_Y_LPARAM(lp);
@@ -870,7 +884,6 @@ static BOOL create_window(ckOpt& opt)
 	HINSTANCE hInstance = GetModuleHandle(nullptr);
 	LPCWSTR	className = L"CkwWindowClass";
 	const wchar_t*	conf_icon;
-	WNDCLASSEX wc;
 	DWORD	style = WS_OVERLAPPEDWINDOW;
 	DWORD	exstyle = WS_EX_ACCEPTFILES;
 	LONG	width, height;
@@ -941,7 +954,7 @@ static BOOL create_window(ckOpt& opt)
 	}
 
 	/**/
-	memset(&wc, 0, sizeof(wc));
+	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(wc);
 	wc.style = 0;
 	wc.lpfnWndProc = WndProc;
@@ -1018,8 +1031,7 @@ static BOOL create_child_process(const wchar_t* cmd)
 	}
 
 	PROCESS_INFORMATION pi;
-	STARTUPINFO si;
-	memset(&si, 0, sizeof(si));
+	STARTUPINFO si = {};
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESTDHANDLES;
 	si.hStdInput  = gStdIn;
@@ -1197,11 +1209,24 @@ static BOOL create_console(ckOpt& opt)
 		return(FALSE);
 
 	UINT codepage = opt.getCodePage();
-	if (IsValidCodePage(codepage) && GetConsoleCP() != codepage) {
-		SetConsoleCP(codepage);
-		SetConsoleOutputCP(codepage);
+	if (IsValidCodePage(codepage)) {
+		gCodePage = codepage;
+		if (GetConsoleCP() != codepage) {
+			SetConsoleCP(codepage);
+			SetConsoleOutputCP(codepage);
+		}
+	} else {
+		gCodePage = GetConsoleCP();
 	}
 
+	// 簡易編集モードが有効ではマウスイベントが発生しない為OFFにする
+	DWORD flag = 0;
+	if (GetConsoleMode(gStdIn, &flag) == TRUE) {
+		flag &= ~ENABLE_QUICK_EDIT_MODE;
+		SetConsoleMode(gStdOut, flag);
+	}
+
+	
 	// 最大化不具合の解消の為フォントを最小化
 	// レイアウト崩れ/CP65001での日本語出力対策でMS GOTHICを指定
 	CONSOLE_FONT_INFOEX info = {0};
@@ -1384,12 +1409,10 @@ int APIENTRY WinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrev, _In_ LPSTR 
 /* 新規ウインドウの作成 */
 void makeNewWindow()
 {
-	STARTUPINFO si;
-	ZeroMemory(&si, sizeof(si));
+	STARTUPINFO si = {};
 	si.cb = sizeof(si);
 
-	PROCESS_INFORMATION pi;
-	ZeroMemory(&pi, sizeof(pi));
+	PROCESS_INFORMATION pi = {};
 	if(CreateProcess(nullptr, GetCommandLine(), nullptr, nullptr, FALSE, 0,
 					   nullptr, nullptr, &si, &pi)){
 		// 使用しないので，すぐにクローズしてよい
