@@ -1223,7 +1223,7 @@ static BOOL create_console(ckOpt& opt)
 	DWORD flag = 0;
 	if (GetConsoleMode(gStdIn, &flag) == TRUE) {
 		flag &= ~ENABLE_QUICK_EDIT_MODE;
-		SetConsoleMode(gStdOut, flag);
+		SetConsoleMode(gStdIn, flag);
 	}
 
 	
