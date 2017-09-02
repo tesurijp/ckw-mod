@@ -63,6 +63,7 @@ BOOL	gCurBlink = FALSE;
 DWORD	gCurBlinkNext = 0;
 BOOL	gCurHide = FALSE;
 bool	gFocus = false;
+bool	gNoAutoClose = false;
 
 /* screen buffer - copy */
 CONSOLE_SCREEN_BUFFER_INFO* gCSI = nullptr;
@@ -522,9 +523,11 @@ static void __set_ime_position(HWND hWnd)
 /*----------*/
 void	onTimer(HWND hWnd)
 {
-	if(WaitForSingleObject(gChild, 0) != WAIT_TIMEOUT) {
-		PostMessage(hWnd, WM_CLOSE, 0,0);
-		return;
+	if (gNoAutoClose == false) {
+		if(WaitForSingleObject(gChild, 0) != WAIT_TIMEOUT) {
+			PostMessage(hWnd, WM_CLOSE, 0,0);
+			return;
+		}
 	}
 
 	// check codepage
@@ -1304,6 +1307,7 @@ BOOL init_options(ckOpt& opt)
 	if(!gBgBrush) gBgBrush = CreateSolidBrush(gColorTable[0]);
 
 	gCurBlink = opt.isCurBlink();
+	gNoAutoClose = opt.isNoAutoClose();
 
 	if(gTitle) delete [] gTitle;
 	const wchar_t *conf_title = opt.getTitle();

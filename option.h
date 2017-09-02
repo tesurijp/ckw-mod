@@ -44,6 +44,7 @@ public:
 	int		getBgBmpPos() const		{ return(m_bgBmpPos); }
 	bool		isCurBlink() const		{ return(m_isCurBlink); }
 	int		getCodePage() const		{ return(m_codePage); }
+	bool		isNoAutoClose() const	{ return(m_isNoAutoClose); }
 
 	const wchar_t*	getCmd() const
 	{
@@ -112,6 +113,7 @@ private:
 	int		m_bgBmpPos;
 	bool		m_isCurBlink;
 	int		m_codePage;
+	bool	m_isNoAutoClose;
 };
 
 #endif /* CKW_OPT_H */

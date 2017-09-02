@@ -978,6 +978,7 @@ ckOpt::ckOpt()
 	m_bgBmpPos = 0;
 	m_isCurBlink = false;
 	m_codePage = GetConsoleCP();
+	m_isNoAutoClose = false;
 }
 
 ckOpt::~ckOpt()
@@ -1045,6 +1046,7 @@ int	ckOpt::setOption(const wchar_t *name, const wchar_t *value, bool rsrc)
 	CHK_MISC(L"backgroundBitmapPos",	L"bitmappos",	m_bgBmpPos = _wtoi(value));
 	CHK_BOOL(L"cursorBlink",		L"crb",		m_isCurBlink);
 	CHK_MISC(L"codePage",	L"cp",		m_codePage = _wtoi(value));
+	CHK_BOOL(L"noAutoClose",	L"nac",		m_isNoAutoClose);
 
 
 	unsigned int i;
