@@ -57,12 +57,12 @@ BOOL	gImeOn = FALSE; /* IME-status */
 
 bool	gMinimizeToTray = false; /* minimize to task tray */
 int		gBgBmpPosOpt = 0;
-POINT	gBgBmpPoint = { 0, 0 };
-POINT	gBgBmpSize = { 0, 0 };
+POINT	gBgBmpPoint = {};
+POINT	gBgBmpSize = {};
 BOOL	gCurBlink = FALSE;
 DWORD	gCurBlinkNext = 0;
 BOOL	gCurHide = FALSE;
-BOOL	gFocus = FALSE;
+bool	gFocus = false;
 
 /* screen buffer - copy */
 CONSOLE_SCREEN_BUFFER_INFO* gCSI = nullptr;
@@ -201,17 +201,15 @@ static void __draw_screen(HDC hDC)
 	int	 work_color_fg = -1;
 	int	 work_color_bg = -1;
 	wchar_t* work_text = new wchar_t[ CSI_WndCols(gCSI) * 2 ];
-	wchar_t* work_text_ptr = nullptr;
 	INT*	 work_width = new INT[ CSI_WndCols(gCSI) * 2 ];
-	INT*	 work_width_ptr;
 	int	 work_pntX;
 
 	pntY = 0;
 	for(y = gCSI->srWindow.Top ; y <= gCSI->srWindow.Bottom ; y++) {
 		pntX = 0;
 		work_pntX = 0;
-		work_text_ptr = work_text;
-		work_width_ptr = work_width;
+		wchar_t* work_text_ptr = work_text;
+		INT* work_width_ptr = work_width;
 		for(x = gCSI->srWindow.Left ; x <= gCSI->srWindow.Right ; x++) {
 
 			if(ptr->Attributes & COMMON_LVB_TRAILING_BYTE) {
@@ -575,8 +573,8 @@ void	onTimer(HWND hWnd)
 	DWORD      nb = size.X * size.Y;
 	CHAR_INFO* buffer = new CHAR_INFO[nb];
 	CHAR_INFO* ptr = buffer;
-	SMALL_RECT sr;
-	COORD      pos = { 0, 0 };
+	SMALL_RECT sr = {};
+	COORD      pos = {};
 
 	/* ReadConsoleOuput - maximum read size 64kByte?? */
 	size.Y = 0x8000 / sizeof(CHAR_INFO) / size.X;
@@ -844,13 +842,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 		}
 		break;
 	case WM_SETFOCUS:
-		gFocus = TRUE;
+		gFocus = true;
 		if(gCurBlink) gCurBlinkNext = GetTickCount() + (gCurHide? 0: GetCaretBlinkTime());
 		InvalidateRect(hWnd, nullptr, TRUE);
 		PostMessage(gConWnd, msg, wp, lp);
 		break;
 	case WM_KILLFOCUS:
-		gFocus = FALSE;
+		gFocus = false;
 		InvalidateRect(hWnd, nullptr, TRUE);
 		PostMessage(gConWnd, msg, wp, lp);
 		break;
@@ -861,7 +859,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 		{
 			CONSOLE_SCREEN_BUFFER_INFO csi;
 			GetConsoleScreenBufferInfo(gStdOut, &csi);
-			COORD size = { 0 };
+			COORD size = {};
 			size.X = (SHORT)(((lp & 0xffff) - (gBorderSize * 2)) / gFontW);
 			size.Y = csi.dwSize.Y;
 			SetConsoleScreenBufferSize(gStdOut, size);
@@ -975,7 +973,7 @@ static BOOL create_window(ckOpt& opt)
 				   nullptr, nullptr, hInstance, nullptr);
 	if(!hWnd){
 		return(FALSE);
-        }
+	}
 
 	gWinMng.register_window(hWnd);
 	sysmenu_init(hWnd);
@@ -1039,7 +1037,7 @@ static BOOL create_child_process(const wchar_t* cmd)
 	si.hStdError  = gStdErr;
 
 	if(! CreateProcess(nullptr, buf, nullptr, nullptr, TRUE,
-			    0, nullptr, nullptr, &si, &pi)) {
+					   0, nullptr, nullptr, &si, &pi)) {
 		delete [] buf;
 		return(FALSE);
 	}
