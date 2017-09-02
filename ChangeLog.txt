@@ -1,6 +1,10 @@
 2017-xx-xx rururu
+    Version 0.9.1-mod-r5
+    * ckw.cfgのデフォルトをWindows10の新カラースキームに差し替え
     * マウスイベントに対応(emacs,vimで確認)
     * ウインドウタイトルが128文字以上の時に落ちる不具合を修正
+    * コマンド終了時にckwを自動終了しないオプションを追加
+        * --noAutoClose / -nac
 
 2016-09-23 rururu
     Version 0.9.1-mod-r4
