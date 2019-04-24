@@ -39,12 +39,12 @@
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -167,7 +167,7 @@
     </Link>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
-      <AdditionalManifestFiles>addmanifest.txt %(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <AdditionalManifestFiles>..\addmanifest.txt</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -195,7 +195,7 @@
     </Link>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
-      <AdditionalManifestFiles>addmanifest.txt %(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <AdditionalManifestFiles>..\addmanifest.txt</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
