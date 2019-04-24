@@ -1,5 +1,6 @@
-#ifndef __CK_OPT_H__
-#define __CK_OPT_H__
+#ifndef CKW_OPT_H
+#define CKW_OPT_H
+#pragma once
 
 #include "ckw.h"
 #include <string>
@@ -14,58 +15,59 @@ public:
 	void		loadXdefaults();
 	bool		set(int argc, wchar_t *argv[]);
 
-	bool		isWinPos()		{ return(m_isWinPos); }
-	int		getWinPosX()		{ return(m_winPosX); }
-	int		getWinPosY()		{ return(m_winPosY); }
-	int		getWinCharW()		{ return(m_winCharW); }
-	int		getWinCharH()		{ return(m_winCharH); }
-	bool		isIconic()		{ return(m_isIconic); }
-	COLORREF	getColorFg()		{ return(m_colorFg); }
-	COLORREF	getColorBg()		{ return(m_colorBg); }
-	COLORREF	getColorCursor()	{ return(m_colorCursor); }
-	COLORREF	getColorCursorIme()	{ return(m_colorCursorIme); }
-	COLORREF	getColor(int i)
+	bool		isWinPos() const	{ return(m_isWinPos); }
+	int		getWinPosX() const		{ return(m_winPosX); }
+	int		getWinPosY() const		{ return(m_winPosY); }
+	int		getWinCharW() const		{ return(m_winCharW); }
+	int		getWinCharH() const		{ return(m_winCharH); }
+	bool		isIconic() const	{ return(m_isIconic); }
+	COLORREF	getColorFg() const	{ return(m_colorFg); }
+	COLORREF	getColorBg() const	{ return(m_colorBg); }
+	COLORREF	getColorCursor() const	{ return(m_colorCursor); }
+	COLORREF	getColorCursorIme() const	{ return(m_colorCursorIme); }
+	COLORREF	getColor(int i) const
 	{
 		return((0 <= i && i <= 15) ? m_colors[i] : m_colors[0]);
 	}
 
-	bool		isAlwaysTray()		{ return(m_alwaysTray); }
-	bool		isMinimizeToTray()	{ return(m_minimizeToTray); }
-	bool		isScrollHide()		{ return(m_scrollHide); }
-	bool		isScrollRight()		{ return(m_scrollRight); }
-	int		getSaveLines()		{ return(m_saveLines); }
-	int		getBorderSize()		{ return(m_borderSize); }
-	int		getLineSpace()		{ return(m_lineSpace); }
-	int		getTransp()		{ return(m_transp); }
-	bool		isTranspColor()		{ return(m_isTranspColor); }
-	COLORREF	getTranspColor()	{ return(m_transpColor); }
-	bool		isTopMost()		{ return(m_isTopMost); }
-	int		getBgBmpPos()		{ return(m_bgBmpPos); }
-	bool		isCurBlink()		{ return(m_isCurBlink); }
-	int		getCodePage()		{ return(m_codePage); }
+	bool		isAlwaysTray() const		{ return(m_alwaysTray); }
+	bool		isMinimizeToTray() const	{ return(m_minimizeToTray); }
+	bool		isScrollHide() const		{ return(m_scrollHide); }
+	bool		isScrollRight() const		{ return(m_scrollRight); }
+	int		getSaveLines() const		{ return(m_saveLines); }
+	int		getBorderSize() const		{ return(m_borderSize); }
+	int		getLineSpace() const		{ return(m_lineSpace); }
+	int		getTransp() const		{ return(m_transp); }
+	bool		isTranspColor() const		{ return(m_isTranspColor); }
+	COLORREF	getTranspColor() const	{ return(m_transpColor); }
+	bool		isTopMost() const		{ return(m_isTopMost); }
+	int		getBgBmpPos() const		{ return(m_bgBmpPos); }
+	bool		isCurBlink() const		{ return(m_isCurBlink); }
+	int		getCodePage() const		{ return(m_codePage); }
+	bool		isNoAutoClose() const	{ return(m_isNoAutoClose); }
 
-	const wchar_t*	getCmd()
+	const wchar_t*	getCmd() const
 	{
 		return((m_cmd.size()) ? m_cmd.c_str() : nullptr);
 	}
-	int		getFontSize()		{ return(m_fontSize); }
-	const wchar_t*	getFont()
+	int		getFontSize() const		{ return(m_fontSize); }
+	const wchar_t*	getFont() const
 	{
 		return((m_font.size()) ? m_font.c_str() : nullptr);
 	}
-	const wchar_t*	getBgBmp()
+	const wchar_t*	getBgBmp() const
 	{
 		return((m_bgBmp.size()) ? m_bgBmp.c_str() : nullptr);
 	}
-	const wchar_t*	getCurDir()
+	const wchar_t*	getCurDir() const
 	{
 		return((m_curDir.size()) ? m_curDir.c_str() : nullptr);
 	}
-	const wchar_t*	getTitle()
+	const wchar_t*	getTitle() const
 	{
 		return((m_title.size()) ? m_title.c_str() : nullptr);
 	}
-	const wchar_t*	getIcon()
+	const wchar_t*	getIcon() const
 	{
 		return((m_icon.size()) ? m_icon.c_str() : nullptr);
 	}
@@ -111,6 +113,7 @@ private:
 	int		m_bgBmpPos;
 	bool		m_isCurBlink;
 	int		m_codePage;
+	bool	m_isNoAutoClose;
 };
 
-#endif /* __CK_OPT_H__ */
+#endif /* CKW_OPT_H */
