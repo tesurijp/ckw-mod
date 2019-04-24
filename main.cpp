@@ -530,18 +530,18 @@ void	onTimer(HWND hWnd)
 		}
 	}
 
-	// check codepage
-	UINT codepage = GetConsoleCP();
-	if (gCodePage != codepage) {
-		gCodePage = codepage;
-		CONSOLE_FONT_INFOEX info = {0};
-		info.cbSize       = sizeof(info);
-		info.FontWeight   = FW_NORMAL;
-		info.dwFontSize.X = 3;
-		info.dwFontSize.Y = 6;
-		lstrcpyn(info.FaceName, L"MS GOTHIC", LF_FACESIZE);
-		SetCurrentConsoleFontEx(gStdOut, FALSE, &info);
-	}
+	//// check codepage
+	//UINT codepage = GetConsoleCP();
+	//if (gCodePage != codepage) {
+	//	gCodePage = codepage;
+	//	CONSOLE_FONT_INFOEX info = {0};
+	//	info.cbSize       = sizeof(info);
+	//	info.FontWeight   = FW_NORMAL;
+	//	info.dwFontSize.X = 3;
+	//	info.dwFontSize.Y = 6;
+	//	lstrcpyn(info.FaceName, L"MS GOTHIC", LF_FACESIZE);
+	//	SetCurrentConsoleFontEx(gStdOut, FALSE, &info);
+	//}
 
 	/* refresh handle */
 	if(gStdOut) CloseHandle(gStdOut);
